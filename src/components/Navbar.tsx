@@ -68,12 +68,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-4 z-50 w-full flex justify-center px-4 pointer-events-none mb-3">
       <nav className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-xl shadow-slate-200/50 rounded-full px-3 sm:px-5 py-2 flex items-center justify-between gap-2 sm:gap-4 max-w-6xl w-full transition-all">
         
-        {/* Left Brand Circle Icon & Title */}
-        <Link href="/" className="flex items-center space-x-2 shrink-0 group">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-900 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-            <Sparkles className="w-4 h-4 text-emerald-400 fill-emerald-400 animate-pulse" />
-          </div>
-          <span className="hidden sm:inline-block font-black text-slate-900 text-sm sm:text-base tracking-tight">
+        {/* Left Brand Title */}
+        <Link href="/" className="flex items-center shrink-0 group py-1">
+          <span className="font-black text-slate-900 text-base sm:text-lg tracking-tight select-none">
             PayN<span className="text-sky-600">Go</span>
           </span>
         </Link>

@@ -190,19 +190,10 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
         <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full opacity-10 pointer-events-none"
           style={{ background: 'radial-gradient(circle, #818cf8, transparent)' }} />
 
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="relative">
-            <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #0ea5e9, #6366f1)' }}
-            >
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900 animate-pulse" />
-          </div>
+        <div className="flex items-center gap-2.5 relative z-10">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-black text-white tracking-tight">Travelo AI</h3>
+              <h3 className="text-base font-black text-white tracking-tight">Travelo AI</h3>
               <span
                 className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"
                 style={{ background: 'rgba(56,189,248,0.15)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)' }}
