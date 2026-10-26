@@ -43,15 +43,15 @@ export const SmartMap: React.FC<SmartMapProps> = ({
 
   // Free high-definition tile layers with NO API keys, NO watermarks, and reliable high-zoom coverage
   const tileUrls = {
-    streets: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    osm: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    streets: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    osm: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     terrain: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
   };
 
   const tileAttributions = {
-    streets: '&copy; CARTO &copy; OpenStreetMap contributors',
-    osm: '&copy; OpenStreetMap contributors',
+    streets: '&copy; OpenStreetMap contributors',
+    osm: '&copy; OpenStreetMap contributors, Humanitarian style',
     satellite: '&copy; Esri World Imagery',
     terrain: '&copy; Esri World Topo',
   };
@@ -85,12 +85,12 @@ export const SmartMap: React.FC<SmartMapProps> = ({
         attributionControl: false,
       });
 
-      // Add Base Tile Layer with maxNativeZoom to prevent ArcGIS "Map data not yet available" errors
+      // Add Base Tile Layer with maxNativeZoom to prevent high-zoom tile gaps or watermarks
       const baseLayer = L.tileLayer(tileUrls[mapTheme], {
         attribution: tileAttributions[mapTheme],
         maxZoom: 19,
-        maxNativeZoom: mapTheme === 'satellite' || mapTheme === 'terrain' ? 17 : 18,
-        subdomains: 'abcd',
+        maxNativeZoom: mapTheme === 'satellite' || mapTheme === 'terrain' ? 17 : 19,
+        subdomains: 'abc',
       }).addTo(map);
 
       tileLayerRef.current = baseLayer;
@@ -125,8 +125,8 @@ export const SmartMap: React.FC<SmartMapProps> = ({
       const newLayer = L.tileLayer(tileUrls[mapTheme], {
         attribution: tileAttributions[mapTheme],
         maxZoom: 19,
-        maxNativeZoom: mapTheme === 'satellite' || mapTheme === 'terrain' ? 17 : 18,
-        subdomains: 'abcd',
+        maxNativeZoom: mapTheme === 'satellite' || mapTheme === 'terrain' ? 17 : 19,
+        subdomains: 'abc',
       }).addTo(mapInstanceRef.current);
 
       tileLayerRef.current = newLayer;
