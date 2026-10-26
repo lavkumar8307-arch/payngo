@@ -96,27 +96,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           <X className="w-4 h-4" />
         </button>
 
-        {/* Animated Sliding Image Hero Panel */}
+        {/* Animated Sliding Hero Panel - Clean Modern Gradient */}
         <div
           className={`absolute top-0 bottom-0 w-1/2 z-20 transition-all duration-700 ease-in-out pointer-events-none ${isRegister ? 'left-0 rounded-r-[22px]' : 'left-1/2 rounded-l-[22px]'
             }`}
         >
-          <div className="relative w-full h-full overflow-hidden shadow-xl rounded-[22px]">
-            <img
-              src="/india_travel_map_hero.jpg"
-              alt="PayNGo Hero"
-              className="w-full h-full object-cover"
-              style={{ objectPosition: '0% center' }}
-            />
-            {/* Subtle Overlay to guarantee crisp WHITE text on image */}
-            <div className="absolute inset-0 bg-black/40 backdrop-brightness-95" />
+          <div className="relative w-full h-full overflow-hidden shadow-2xl rounded-[22px] bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 flex flex-col items-center justify-center p-8 text-center text-white">
+            {/* Subtle modern ambient glow accents */}
+            <div className="absolute -top-16 -right-16 w-48 h-48 bg-sky-500/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Centered WHITE Text Overlay ON Image */}
-            <div className="absolute inset-0 p-8 flex flex-col items-center justify-center text-center text-white space-y-4">
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight drop-shadow-md">
+            {/* Centered WHITE Text */}
+            <div className="relative z-10 flex flex-col items-center justify-center space-y-3.5">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
                 {isRegister ? 'Welcome back' : 'Hello there'}
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-100 leading-relaxed max-w-[220px] font-medium opacity-90 drop-shadow-sm">
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-[230px] font-medium">
                 {isRegister
                   ? 'Login to review your latest travel itineraries & PayPal bookings.'
                   : 'Begin your journey using PayNGo, and start exploring now.'}
@@ -125,7 +120,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               <button
                 type="button"
                 onClick={() => setIsRegister(!isRegister)}
-                className="mt-2 pointer-events-auto border-2 border-white text-white hover:bg-white hover:text-zinc-950 font-bold text-xs uppercase tracking-wider px-8 py-2.5 rounded-full backdrop-blur-sm transition-all shadow-lg transform hover:scale-105"
+                className="mt-3 pointer-events-auto border-2 border-white/90 text-white hover:bg-white hover:text-slate-950 font-bold text-xs uppercase tracking-wider px-8 py-2.5 rounded-full transition-all shadow-md transform hover:scale-105 active:scale-95"
               >
                 {isRegister ? 'LOGIN' : 'SIGN UP'}
               </button>
