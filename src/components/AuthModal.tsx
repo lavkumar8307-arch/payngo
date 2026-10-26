@@ -96,22 +96,154 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           <X className="w-4 h-4" />
         </button>
 
-        {/* Animated Sliding Hero Panel - Clean Modern Gradient */}
+        {/* Animated Sliding Hero Panel - Cinematic Sky & 3D Flight Trajectory */}
         <div
           className={`absolute top-0 bottom-0 w-1/2 z-20 transition-all duration-700 ease-in-out pointer-events-none ${isRegister ? 'left-0 rounded-r-[22px]' : 'left-1/2 rounded-l-[22px]'
             }`}
         >
-          <div className="relative w-full h-full overflow-hidden shadow-2xl rounded-[22px] bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 flex flex-col items-center justify-center p-8 text-center text-white">
-            {/* Subtle modern ambient glow accents */}
-            <div className="absolute -top-16 -right-16 w-48 h-48 bg-sky-500/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative w-full h-full overflow-hidden shadow-2xl rounded-[22px] flex flex-col items-center justify-center p-8 text-center text-white">
+            {/* Embedded CSS for Flight Trajectory & Airplane Motion Path */}
+            <style jsx>{`
+              @keyframes flightTrajectoryFlow {
+                from {
+                  stroke-dashoffset: 28;
+                }
+                to {
+                  stroke-dashoffset: 0;
+                }
+              }
 
-            {/* Centered WHITE Text */}
-            <div className="relative z-10 flex flex-col items-center justify-center space-y-3.5">
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              @keyframes flightMotion {
+                0% {
+                  offset-distance: 0%;
+                  -webkit-offset-distance: 0%;
+                  transform: scale(0.24);
+                  opacity: 0.15;
+                  filter: blur(1.5px);
+                }
+                15% {
+                  offset-distance: 15%;
+                  -webkit-offset-distance: 15%;
+                  transform: scale(0.28);
+                  opacity: 0.85;
+                  filter: blur(0px);
+                }
+                20% {
+                  offset-distance: 20%;
+                  -webkit-offset-distance: 20%;
+                  transform: scale(0.35);
+                  opacity: 1;
+                  filter: blur(0px);
+                }
+                70% {
+                  offset-distance: 70%;
+                  -webkit-offset-distance: 70%;
+                  transform: scale(1.25);
+                  opacity: 1;
+                  filter: blur(0px);
+                }
+                80% {
+                  offset-distance: 80%;
+                  -webkit-offset-distance: 80%;
+                  transform: scale(2.4);
+                  opacity: 1;
+                  filter: blur(0px);
+                }
+                95% {
+                  offset-distance: 95%;
+                  -webkit-offset-distance: 95%;
+                  transform: scale(4.8);
+                  opacity: 0.95;
+                  filter: blur(0.5px);
+                }
+                98% {
+                  offset-distance: 98%;
+                  -webkit-offset-distance: 98%;
+                  transform: scale(5.0);
+                  opacity: 0.2;
+                  filter: blur(2.5px);
+                }
+                100% {
+                  offset-distance: 100%;
+                  -webkit-offset-distance: 100%;
+                  transform: scale(5.0);
+                  opacity: 0;
+                  filter: blur(4px);
+                }
+              }
+
+              .flight-line-animated {
+                stroke-dasharray: 6 8;
+                animation: flightTrajectoryFlow 1.2s linear infinite;
+              }
+
+              .airplane-node {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 28px;
+                height: 28px;
+                offset-path: path("M -40 540 C 90 460, 160 330, 250 200 C 315 110, 370 55, 470 -20");
+                -webkit-offset-path: path("M -40 540 C 90 460, 160 330, 250 200 C 315 110, 370 55, 470 -20");
+                offset-rotate: auto 0deg;
+                -webkit-offset-rotate: auto 0deg;
+                animation: flightMotion 9s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+                will-change: transform, offset-distance, opacity;
+                pointer-events: none;
+                z-index: 20;
+              }
+            `}</style>
+
+            {/* 1. Visual Backdrop & Overlays: Atmospheric high-altitude aerial cloudscape */}
+            <img
+              src="/sky_cloudscape_hero.jpg"
+              alt="High-Altitude Cloudscape"
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none scale-105"
+              style={{ objectPosition: 'center 40%' }}
+            />
+
+            {/* Multi-stop gradient overlay to preserve sharp contrast for all copy */}
+            <div
+              className="absolute inset-0 pointer-events-none z-10"
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.65) 50%, rgba(2, 6, 23, 0.85) 100%)',
+              }}
+            />
+
+            {/* 2. Trajectory Flight Line: SVG curved cubic Bézier trajectory route */}
+            <svg
+              className="absolute inset-0 w-full h-full pointer-events-none z-15"
+              viewBox="0 0 350 520"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M -40 540 C 90 460, 160 330, 250 200 C 315 110, 370 55, 470 -20"
+                stroke="rgba(255, 255, 255, 0.35)"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                className="flight-line-animated"
+              />
+            </svg>
+
+            {/* 3. Airplane Motion Path: Jet locked to the exact SVG trajectory */}
+            <div className="airplane-node">
+              <svg
+                viewBox="0 0 24 24"
+                className="w-7 h-7 fill-white text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.9)]"
+                style={{ transform: 'rotate(90deg)' }}
+              >
+                <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+              </svg>
+            </div>
+
+            {/* 4. Foreground Layering: Text content and action button elevated at z-index: 30 */}
+            <div className="relative z-30 flex flex-col items-center justify-center space-y-3.5 pointer-events-auto px-4">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white drop-shadow-md">
                 {isRegister ? 'Welcome back' : 'Hello there'}
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-[230px] font-medium">
+              <p className="text-xs sm:text-sm text-slate-100 leading-relaxed max-w-[240px] font-medium drop-shadow-sm opacity-95">
                 {isRegister
                   ? 'Login to review your latest travel itineraries & PayPal bookings.'
                   : 'Begin your journey using PayNGo, and start exploring now.'}
@@ -120,7 +252,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               <button
                 type="button"
                 onClick={() => setIsRegister(!isRegister)}
-                className="mt-3 pointer-events-auto border-2 border-white/90 text-white hover:bg-white hover:text-slate-950 font-bold text-xs uppercase tracking-wider px-8 py-2.5 rounded-full transition-all shadow-md transform hover:scale-105 active:scale-95"
+                className="mt-3 pointer-events-auto border-2 border-white/95 text-white hover:bg-white hover:text-slate-950 font-bold text-xs uppercase tracking-wider px-8 py-2.5 rounded-full transition-all shadow-lg transform hover:scale-105 active:scale-95 backdrop-blur-sm"
               >
                 {isRegister ? 'LOGIN' : 'SIGN UP'}
               </button>
