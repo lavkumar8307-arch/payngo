@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trip Planner – Free Leaflet Map & India City Autocomplete</title>
+  <!-- Step 2: Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>India Trip & Route Planner</h1>
+      <p>Free interactive map with OpenStreetMap tiles, comprehensive Indian cities autocomplete, and OSRM driving routes.</p>
+    </header>
+
+    <!-- Step 4: Pickup & Destination Search with IDs -->
+    <div class="trip-search">
+      <div class="input-group">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label for="pickup" style="margin-bottom: 0;">Pickup Location</label>
+          <button id="gps-btn" type="button" class="chip" style="color: #059669; border-color: #a7f3d0; background: #ecfdf5; cursor: pointer;">📍 Detect City via GPS</button>
+        </div>
+        <input id="pickup" type="text" placeholder="Enter pickup city (e.g. Hyd)..." autocomplete="off" />
+        <div id="pickup-results" class="suggestions"></div>
+      </div>
+
+      <div class="input-group">
+        <label for="destination">Destination</label>
+        <input id="destination" type="text" placeholder="Enter destination (e.g. Pan)..." autocomplete="off" />
+        <div id="destination-results" class="suggestions"></div>
+      </div>
+
+      <div class="button-group">
+        <button id="show-route" type="button">Show on Map</button>
+      </div>
+
+      <!-- Quick sample test chips -->
+      <div class="quick-chips">
+        <span class="quick-title">Quick Test:</span>
+        <button type="button" class="chip" onclick="setQuickTrip('Hyderabad', 'Panaji')">Hyderabad ➔ Panaji</button>
+        <button type="button" class="chip" onclick="setQuickTrip('Mumbai', 'Jaipur')">Mumbai ➔ Jaipur</button>
+        <button type="button" class="chip" onclick="setQuickTrip('Bengaluru', 'Kochi')">Bengaluru ➔ Kochi</button>
+        <button type="button" class="chip" onclick="setQuickTrip('Delhi', 'Agra')">Delhi ➔ Agra</button>
+      </div>
+
+      <!-- Route metrics box -->
+      <div id="route-info" class="route-info" style="display: none;">
+        <div class="info-item">
+          <span class="info-label">Driving Distance:</span>
+          <span id="distance-value" class="info-val">-</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Estimated Driving Time:</span>
+          <span id="duration-value" class="info-val">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Map Container -->
+    <div id="map"></div>
+  </div>
+
+  <!-- Step 2 & Step 4-6: Leaflet JS and script.js -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
