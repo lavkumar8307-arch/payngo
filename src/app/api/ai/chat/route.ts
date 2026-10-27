@@ -61,11 +61,25 @@ export async function POST(req: NextRequest) {
     // 1. Google Gemini 1.5 Flash (100% Free Tier from Google AI Studio)
     if (geminiKey && geminiKey.trim() !== '' && !geminiKey.includes('your_gemini_api_key')) {
       try {
+        // Build conversation history — map 'assistant' role to Gemini's 'model' role
+        const historyMessages = conversationHistory.slice(-4).map((m: any) => ({
+          role: m.sender === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.text }],
+        }));
+
+        // Deduplicate consecutive same-role messages (Gemini requires alternating user/model)
+        const deduped: typeof historyMessages = [];
+        for (const msg of historyMessages) {
+          if (deduped.length > 0 && deduped[deduped.length - 1].role === msg.role) {
+            // Merge into previous message
+            deduped[deduped.length - 1].parts[0].text += '\n' + msg.parts[0].text;
+          } else {
+            deduped.push(msg);
+          }
+        }
+
         const contentsPayload = [
-          ...conversationHistory.slice(-4).map((m: any) => ({
-            role: m.sender === 'agent' ? 'model' : 'user',
-            parts: [{ text: m.text }],
-          })),
+          ...deduped,
           {
             role: 'user',
             parts: [{ text: `[Current Explorer Context: Exploring ${city}, India]\n\n${query}` }],
@@ -75,17 +89,23 @@ export async function POST(req: NextRequest) {
         // Primary: Google Gemini 3.8 Flash (latest official version)
         const candidateModels = [
           'gemini-3.8-flash',
-          'gemini-3.7-flash',
+          'gemini-3.5-flash',
+          'gemini-2.5-flash',
           'gemini-flash-latest',
           'gemini-2.5-flash-lite',
         ];
 
         for (const modelName of candidateModels) {
           try {
+            // Abort after 15 seconds to prevent hanging on network issues
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey.trim()}`;
             const geminiRes = await fetch(geminiUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              signal: controller.signal,
               body: JSON.stringify({
                 system_instruction: {
                   parts: [{ text: GEMINI_SYSTEM_PROMPT }],
@@ -98,6 +118,8 @@ export async function POST(req: NextRequest) {
               }),
             });
 
+            clearTimeout(timeoutId);
+
             if (geminiRes.ok) {
               const geminiData = await geminiRes.json();
               const candidateText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -107,10 +129,15 @@ export async function POST(req: NextRequest) {
                 break;
               }
             } else {
-              console.warn(`Gemini model ${modelName} returned status ${geminiRes.status}`);
+              const errBody = await geminiRes.text().catch(() => '');
+              console.warn(`Gemini model ${modelName} returned status ${geminiRes.status}:`, errBody.slice(0, 200));
             }
-          } catch (modelErr) {
-            console.warn(`Error trying Gemini model ${modelName}:`, modelErr);
+          } catch (modelErr: any) {
+            if (modelErr?.name === 'AbortError') {
+              console.warn(`Gemini model ${modelName} timed out after 15s`);
+            } else {
+              console.warn(`Error trying Gemini model ${modelName}:`, modelErr?.message || modelErr);
+            }
           }
         }
       } catch (geminiErr) {
@@ -132,6 +159,9 @@ export async function POST(req: NextRequest) {
           },
         ];
 
+        const anthropicController = new AbortController();
+        const anthropicTimeout = setTimeout(() => anthropicController.abort(), 15000);
+
         const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
@@ -139,6 +169,7 @@ export async function POST(req: NextRequest) {
             'x-api-key': anthropicKey.trim(),
             'anthropic-version': '2023-06-01',
           },
+          signal: anthropicController.signal,
           body: JSON.stringify({
             model: 'claude-3-5-sonnet-20241022',
             max_tokens: 1024,
@@ -146,6 +177,8 @@ export async function POST(req: NextRequest) {
             messages: messagesPayload,
           }),
         });
+
+        clearTimeout(anthropicTimeout);
 
         if (anthropicRes.ok) {
           const anthropicData = await anthropicRes.json();
