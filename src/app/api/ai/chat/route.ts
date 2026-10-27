@@ -41,7 +41,12 @@ export async function POST(req: NextRequest) {
     let toolResult: any = null;
     let modelUsed = 'payngo-native';
 
-    // Check for agentic booking intent (e.g. "book Taj Mahal", "pay for breakfast", "order cab")
+    // Intent detectors
+    const isGreeting = /^(hi|hello|hey|namaste|vanakkam|good morning|good evening|howdy|sup|hola)\b/i.test(lowerQ);
+    const isFoodIntent = lowerQ.includes('food') || lowerQ.includes('eat') || lowerQ.includes('breakfast') || lowerQ.includes('lunch') || lowerQ.includes('dinner') || lowerQ.includes('veg') || lowerQ.includes('biryani') || lowerQ.includes('snack') || lowerQ.includes('restaurant');
+    const isSightseeingIntent = lowerQ.includes('visit') || lowerQ.includes('see') || lowerQ.includes('place') || lowerQ.includes('heritage') || lowerQ.includes('temple') || lowerQ.includes('fort') || lowerQ.includes('monument') || lowerQ.includes('attraction') || lowerQ.includes('gem');
+    const isBudgetIntent = lowerQ.includes('budget') || lowerQ.includes('cost') || lowerQ.includes('price') || lowerQ.includes('how much') || lowerQ.includes('cheap') || lowerQ.includes('expensive');
+
     const isBookingIntent =
       lowerQ.includes('book') ||
       lowerQ.includes('pay') ||
@@ -56,14 +61,15 @@ export async function POST(req: NextRequest) {
       lowerQ.includes('fare') ||
       lowerQ.includes('metro') ||
       lowerQ.includes('rapido') ||
-      lowerQ.includes('uber');
+      lowerQ.includes('uber') ||
+      lowerQ.includes('taxi');
 
-    // 1. Google Gemini 1.5 Flash (100% Free Tier from Google AI Studio)
-    if (geminiKey && geminiKey.trim() !== '' && !geminiKey.includes('your_gemini_api_key')) {
+    // 1. Google Gemini (Fast models prioritized)
+    if (geminiKey && geminiKey.trim() !== '') {
       try {
         // Build conversation history — map 'assistant' role to Gemini's 'model' role
         const historyMessages = conversationHistory.slice(-4).map((m: any) => ({
-          role: m.sender === 'assistant' ? 'model' : 'user',
+          role: (m.sender === 'assistant' || m.role === 'assistant') ? 'model' : 'user',
           parts: [{ text: m.text }],
         }));
 
@@ -71,7 +77,6 @@ export async function POST(req: NextRequest) {
         const deduped: typeof historyMessages = [];
         for (const msg of historyMessages) {
           if (deduped.length > 0 && deduped[deduped.length - 1].role === msg.role) {
-            // Merge into previous message
             deduped[deduped.length - 1].parts[0].text += '\n' + msg.parts[0].text;
           } else {
             deduped.push(msg);
@@ -86,20 +91,19 @@ export async function POST(req: NextRequest) {
           },
         ];
 
-        // Primary: Google Gemini 3.8 Flash (latest official version)
+        // High-speed, high-availability models first
         const candidateModels = [
-          'gemini-3.8-flash',
-          'gemini-3.5-flash',
-          'gemini-2.5-flash',
-          'gemini-flash-latest',
+          'gemini-3.5-flash',       // Tested ~1.8s ultra-fast response
+          'gemini-3.1-flash-lite',  // Lightweight backup
+          'gemini-flash-latest',    // Stable alias
           'gemini-2.5-flash-lite',
+          'gemini-3.8-flash',
         ];
 
         for (const modelName of candidateModels) {
           try {
-            // Abort after 15 seconds to prevent hanging on network issues
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const timeoutId = setTimeout(() => controller.abort(), 6500); // 6.5s per model to avoid serverless timeout
 
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey.trim()}`;
             const geminiRes = await fetch(geminiUrl, {
@@ -123,18 +127,18 @@ export async function POST(req: NextRequest) {
             if (geminiRes.ok) {
               const geminiData = await geminiRes.json();
               const candidateText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (candidateText) {
-                aiReply = candidateText;
+              if (candidateText && candidateText.trim().length > 0) {
+                aiReply = candidateText.trim();
                 modelUsed = modelName;
                 break;
               }
             } else {
               const errBody = await geminiRes.text().catch(() => '');
-              console.warn(`Gemini model ${modelName} returned status ${geminiRes.status}:`, errBody.slice(0, 200));
+              console.warn(`Gemini model ${modelName} returned status ${geminiRes.status}:`, errBody.slice(0, 150));
             }
           } catch (modelErr: any) {
             if (modelErr?.name === 'AbortError') {
-              console.warn(`Gemini model ${modelName} timed out after 15s`);
+              console.warn(`Gemini model ${modelName} timed out after 6.5s`);
             } else {
               console.warn(`Error trying Gemini model ${modelName}:`, modelErr?.message || modelErr);
             }
@@ -150,7 +154,7 @@ export async function POST(req: NextRequest) {
       try {
         const messagesPayload = [
           ...conversationHistory.slice(-4).map((m: any) => ({
-            role: m.sender === 'agent' ? 'assistant' : 'user',
+            role: (m.sender === 'assistant' || m.role === 'assistant') ? 'assistant' : 'user',
             content: m.text,
           })),
           {
@@ -160,7 +164,7 @@ export async function POST(req: NextRequest) {
         ];
 
         const anthropicController = new AbortController();
-        const anthropicTimeout = setTimeout(() => anthropicController.abort(), 15000);
+        const anthropicTimeout = setTimeout(() => anthropicController.abort(), 7000);
 
         const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -192,20 +196,42 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Built-in Intelligence Response
+    // 3. Dynamic Context-Aware Fallback (Only used if ALL external AI models are down)
     if (!aiReply) {
-      if (isBookingIntent) {
-        aiReply = `🤖 **PayNGo Agentic Booking Ready**: I've analyzed your travel request for **${city}**. I can immediately lock in your reservation and generate a secure PayPal checkout order for you below!`;
+      if (isGreeting) {
+        aiReply = `👋 **Namaste & Welcome!** I'm **Travelo**, your PayNGo travel assistant for **${city}**.\n\n` +
+          `What are you planning today? Here are some quick ideas:\n` +
+          `• 🍛 **Local Eats**: Ask me for the best breakfast, street food, or dining under ₹300.\n` +
+          `• 🚖 **Fare Comparison**: Compare live cab, auto, and metro fares across ${city}.\n` +
+          `• 🏛️ **Heritage & Highlights**: Discover top monuments, hidden gems, and entry fees.\n` +
+          `• 💳 **Instant Booking**: Say *"Book tour in ${city}"* to lock in an experience with PayPal!`;
+      } else if (isBookingIntent) {
+        aiReply = `🤖 **PayNGo Agentic Booking Ready**: I've found a signature experience for **${city}**. You can review details and securely book it with PayPal below!`;
       } else if (isRideIntent) {
-        aiReply = `🚖 **Multi-Modal Transit Comparison for ${city}**: Here is your real-time breakdown across verified transit options including live fares and ETA:`;
+        aiReply = `🚖 **Transit Comparison for ${city}**: Here is your real-time breakdown across verified rides, autos, and metro options with ETA and fares:`;
+      } else if (isFoodIntent) {
+        aiReply = `🍛 **Culinary Guide for ${city}**:\n\n` +
+          `• **Morning Specialties**: Try authentic local breakfast platters (dosas, kachoris, or poha depending on the region) priced ~₹60–₹120.\n` +
+          `• **Signature Must-Haves**: Famous regional thalis and slow-cooked house curries at legendary local kitchens.\n` +
+          `• **Verified Street Food**: Head to central market bazaars between 5 PM and 10 PM for safe, high-turnover street delicacies!`;
+      } else if (isSightseeingIntent) {
+        aiReply = `🏛️ **Top Highlights in ${city}**:\n\n` +
+          `• **Iconic Heritage**: Major architectural marvels and historic quarters (best visited early morning to avoid queues).\n` +
+          `• **Cultural Walk**: Bustling heritage bazaars packed with local handicrafts and spices.\n` +
+          `• **Sunset Spot**: Panoramic viewpoints or lakefront promenades ideal for photography around 5:30 PM.`;
+      } else if (isBudgetIntent) {
+        aiReply = `💰 **Budget Breakdown for ${city}**:\n\n` +
+          `• **Backpacker**: ₹1,200 – ₹1,800/day ($15 – $22 USD) covering hostels, street food, and metro/autos.\n` +
+          `• **Mid-Range**: ₹3,500 – ₹6,000/day ($42 – $72 USD) for 3-star boutique stays, cab rides, and AC dining.\n` +
+          `• **Luxury**: ₹12,000+/day ($145+ USD) for heritage palace hotels, private chauffeur, and curated fine dining.`;
       } else if (lowerQ.includes('itinerary') || lowerQ.includes('plan') || lowerQ.includes('trip')) {
-        aiReply = `🗺️ **Smart Curated Travel Itinerary**: Here is a comprehensive multi-day exploration guide for **${city}**, featuring iconic heritage spots, local culinary hubs, and optimal travel routes!`;
+        aiReply = `🗺️ **Smart Curated Travel Plan for ${city}**:\n\n` +
+          `• **Day 1**: Arrive, check-in, explore historic core & famous regional dinner.\n` +
+          `• **Day 2**: Early morning landmark visits, local bazaar photography walk, evening light & sound show.\n` +
+          `• **Day 3**: Offbeat temples/gardens, souvenir shopping, and smooth airport/railway transit!`;
       } else {
-        aiReply = `✨ **PayNGo Travel Intelligence for ${city}**:\n\n` +
-          `• **Top Highlights**: Iconic heritage monuments, vibrant local bazaars, and scenic cultural hotspots.\n` +
-          `• **Transit Connectivity**: Accessible via direct flights, IRCTC Superfast & Vande Bharat trains, and express roadway corridors.\n` +
-          `• **Food & Dining**: World-renowned regional delicacies with authentic vegetarian and multi-cuisine options.\n` +
-          `• **PayPal Payments**: Seamless agentic bookings supported across all verified experiences!`;
+        aiReply = `✨ **Exploring ${city} with Travelo**:\n\n` +
+          `Regarding **"${query}"** in **${city}**: I can guide you through specific attractions, verified dining spots, transit fare estimates, or create a tailored PayPal booking. Feel free to ask a specific question!`;
       }
     }
 
