@@ -23,7 +23,7 @@ export function calculateHaversineDistance(
   lat2: number,
   lng2: number
 ): number {
-  if (!lat1 || !lng1 || !lat2 || !lng2) return 15;
+  if (![lat1, lng1, lat2, lng2].every(Number.isFinite) || Math.abs(lat1) > 90 || Math.abs(lat2) > 90 || Math.abs(lng1) > 180 || Math.abs(lng2) > 180) {\n    throw new Error('Valid origin and destination coordinates are required');\n  }
   const R = 6371; // Earth radius in kilometers
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lng2 - lng1) * Math.PI) / 180;
@@ -40,7 +40,7 @@ export function calculateHaversineDistance(
 
 export function calculateFares(
   distanceKm: number,
-  surgeMultiplier: number = 1.15,
+  surgeMultiplier: number = 1.0,
   placeName: string = ''
 ): AppRideOption[] {
   const usdRate = 83.2;
