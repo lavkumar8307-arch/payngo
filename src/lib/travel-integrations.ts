@@ -6,20 +6,42 @@ export type PlaceSearchResult = {
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
 ];
 
-export async function searchOpenStreetMapPlaces(query: string, category = 'all', limit = 10): Promise<PlaceSearchResult[]> {
-  const text = query.trim();
-  if (!text) throw new Error('A place or city query is required');
-  const geoUrl = new URL('https://nominatim.openstreetmap.org/search');
-  geoUrl.searchParams.set('q', text);
-  geoUrl.searchParams.set('format', 'jsonv2');
-  geoUrl.searchParams.set('limit', '1');
-  const geoRes = await fetch(geoUrl, { headers: { 'User-Agent': 'PayNGoTravelApp/1.0 (location search)' }, cache: 'no-store' });
-  if (!geoRes.ok) throw new Error('Location lookup is temporarily unavailable');
-  const geo = await geoRes.json();
-  if (!Array.isArray(geo) || !geo[0]) return [];
-  const lat = Number(geo[0].lat), lon = Number(geo[0].lon);
+export async function searchOpenStreetMapPlaces(
+  query: string,
+  category = 'all',
+  limit = 10,
+  coords?: { lat: number; lng: number }
+): Promise<PlaceSearchResult[]> {
+  let lat: number | null = null;
+  let lon: number | null = null;
+  let displayName = query.trim();
+
+  if (coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng)) {
+    lat = coords.lat;
+    lon = coords.lng;
+  } else {
+    const text = query.trim();
+    if (!text) throw new Error('A place, city, or coordinates query is required');
+    const geoUrl = new URL('https://nominatim.openstreetmap.org/search');
+    geoUrl.searchParams.set('q', text);
+    geoUrl.searchParams.set('format', 'jsonv2');
+    geoUrl.searchParams.set('limit', '1');
+    const geoRes = await fetch(geoUrl, {
+      headers: { 'User-Agent': 'PayNGoTravelApp/1.0 (location search)' },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!geoRes.ok) throw new Error('Location lookup is temporarily unavailable');
+    const geo = await geoRes.json();
+    if (!Array.isArray(geo) || !geo[0]) return [];
+    lat = Number(geo[0].lat);
+    lon = Number(geo[0].lon);
+    displayName = geo[0].display_name || text;
+  }
+
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return [];
   const selector = category === 'food'
     ? 'node[amenity~"restaurant|cafe|fast_food|food_court"](around:6000,LAT,LON);way[amenity~"restaurant|cafe|fast_food|food_court"](around:6000,LAT,LON);'
@@ -45,7 +67,7 @@ export async function searchOpenStreetMapPlaces(query: string, category = 'all',
       id: 'osm-' + item.type + '-' + item.id,
       name: tags.name || tags.brand || tags.operator || 'Unnamed place',
       category: tags.amenity ? 'food' : tags.tourism === 'hotel' || tags.tourism === 'hostel' ? 'hotel' : 'activity',
-      address: [tags['addr:housenumber'], tags['addr:street'], tags['addr:suburb'], tags['addr:city'] || tags['addr:town']].filter(Boolean).join(', ') || geo[0].display_name,
+      address: [tags['addr:housenumber'], tags['addr:street'], tags['addr:suburb'], tags['addr:city'] || tags['addr:town']].filter(Boolean).join(', ') || displayName,
       lat: pLat, lng: pLng, source: 'OpenStreetMap' as const,
     };
   }).filter(Boolean).slice(0, limit);

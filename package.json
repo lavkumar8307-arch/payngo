@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:locations": "npx tsx scripts/test-location-search.ts"
+    "test:locations": "npx tsx scripts/test-location-search.ts",
+    "test:workflow": "npx tsx scripts/test-workflow.ts"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^8.7.0",

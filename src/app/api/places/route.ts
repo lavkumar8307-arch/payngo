@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
   const lng = Number(searchParams.get('lng'));
   if (!city.trim()) return NextResponse.json({ success: false, error: 'Provide a city or place query', places: [] }, { status: 400 });
   try {
-    const places = await searchOpenStreetMapPlaces(city, category, 12);
+    const coords = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : undefined;
+    const places = await searchOpenStreetMapPlaces(city, category, 12, coords);
     return NextResponse.json({ success: true, city, source: 'OpenStreetMap', places });
   } catch (error) {
     // Existing curated data is retained only as an explicitly labelled fallback.

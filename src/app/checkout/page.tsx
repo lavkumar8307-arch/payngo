@@ -159,16 +159,22 @@ function CheckoutContent() {
   };
 
   const handleApprove = async (data: any) => {
+    setIsProcessing(true);
+    setErrorMsg(null);
     try {
       const res = await fetch('/api/paypal/capture-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: data.orderID }),
       });
-      await res.json();
+      const result = await res.json();
+      if (!result.success || result.status !== 'COMPLETED') {
+        throw new Error(result.error || 'Payment capture could not be confirmed by PayPal');
+      }
       completeBooking(data.orderID);
     } catch (err: any) {
-      completeBooking(data.orderID || `PAYPAL-${Date.now().toString().slice(-6)}`);
+      setErrorMsg(err.message || 'PayPal capture failed. Your booking was not charged or confirmed.');
+      setIsProcessing(false);
     }
   };
 

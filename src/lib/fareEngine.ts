@@ -15,6 +15,10 @@ export interface AppRideOption {
   logoSvg: string;
   icon: string;
   availabilityNote?: string;
+  distanceKm?: number;
+  pricingAssumptions?: string;
+  quoteType?: string;
+  isEstimate?: boolean;
 }
 
 export function calculateHaversineDistance(
@@ -23,7 +27,15 @@ export function calculateHaversineDistance(
   lat2: number,
   lng2: number
 ): number {
-  if (![lat1, lng1, lat2, lng2].every(Number.isFinite) || Math.abs(lat1) > 90 || Math.abs(lat2) > 90 || Math.abs(lng1) > 180 || Math.abs(lng2) > 180) {\n    throw new Error('Valid origin and destination coordinates are required');\n  }
+  if (
+    ![lat1, lng1, lat2, lng2].every(Number.isFinite) ||
+    Math.abs(lat1) > 90 ||
+    Math.abs(lat2) > 90 ||
+    Math.abs(lng1) > 180 ||
+    Math.abs(lng2) > 180
+  ) {
+    throw new Error('Valid origin and destination coordinates are required');
+  }
   const R = 6371; // Earth radius in kilometers
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lng2 - lng1) * Math.PI) / 180;
@@ -54,12 +66,29 @@ export function calculateFares(
     lowerName.includes('lakshadweep') ||
     lowerName.includes('kavaratti');
 
+  const annotate = (options: AppRideOption[]): AppRideOption[] => {
+    return options.map((opt) => ({
+      ...opt,
+      distanceKm: Math.round(distanceKm * 10) / 10,
+      isEstimate: true,
+      quoteType: 'MODELLED_ESTIMATE_NOT_LIVE_PROVIDER_QUOTE',
+      availabilityNote:
+        opt.availabilityNote ||
+        'Modelled transport estimate based on distance. Final fares and driver availability are confirmed inside the provider app.',
+      pricingAssumptions:
+        opt.pricingAssumptions ||
+        `Modelled for ${Math.round(distanceKm * 10) / 10} km at ~₹${Math.round(
+          opt.estimatedPriceINR / Math.max(1, distanceKm)
+        )}/km (surge: ${surgeMultiplier}x, USD rate: 83.2)`,
+    }));
+  };
+
   // 1. Island Union Territory Access (Air & Sea Only)
   if (isIsland) {
     const flightPrice = 5400;
     const shipPrice = 1850;
 
-    return [
+    return annotate([
       {
         provider: 'IndiGo / Air India Flight',
         vehicleType: 'Direct Flight to Port Blair (IXZ) / Agatti (AGX)',
@@ -92,7 +121,7 @@ export function calculateFares(
         icon: 'Ship',
         availabilityNote: 'Sea Passenger Vessel from Chennai / Vizag / Kolkata',
       },
-    ];
+    ]);
   }
 
   // 2. Long Distance Inter-State Travel (> 350 km, e.g. Bihar to Hyderabad ~1,140km)
@@ -103,7 +132,7 @@ export function calculateFares(
 
     const maxPrice = cabPrice;
 
-    return [
+    return annotate([
       {
         provider: 'IndiGo / Air India Flight',
         vehicleType: 'Commercial Domestic Flight (Direct / 1-Stop)',
@@ -150,7 +179,7 @@ export function calculateFares(
         icon: 'Car',
         availabilityNote: 'Private long-distance chauffeur rental for group/family travel.',
       },
-    ];
+    ]);
   }
 
   // 3. Medium Distance Inter-City Travel (60 km - 350 km, e.g. Delhi to Agra, Mumbai to Pune)
@@ -162,7 +191,7 @@ export function calculateFares(
 
     const maxPrice = uberIntercity;
 
-    return [
+    return annotate([
       {
         provider: 'Zingbus / AbhiBus Express',
         vehicleType: 'AC Volvo Multi-Axle Intercity Bus',
@@ -221,7 +250,7 @@ export function calculateFares(
         logoSvg: '🚗',
         icon: 'CarFront',
       },
-    ];
+    ]);
   }
 
   // 4. Short Distance Local Intracity Commute (< 60 km)
@@ -233,7 +262,7 @@ export function calculateFares(
 
   const maxPrice = uberGoPrice;
 
-  return [
+  return annotate([
     {
       provider: 'Rapido',
       vehicleType: 'Rapido Bike / Auto',
@@ -306,5 +335,5 @@ export function calculateFares(
       logoSvg: '🚇',
       icon: 'Train',
     },
-  ];
+  ]);
 }

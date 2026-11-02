@@ -117,28 +117,19 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
     }
   };
 
-  // Instant Sandbox Demo Bypass (For rapid hackathon & testing presentation)
+  // Direct One-Click Sandbox Checkout via verified PayPal Orders API v2
   const handleInstantSandboxCheckout = async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
-      const mockOrderId = `PAYPAL-WNDR-${Math.floor(100000 + Math.random() * 900000)}`;
-      const currentUser = getStoredUser();
-      persistBooking({
-        order_id: mockOrderId,
-        title: rideOption ? `${place.name} + Ride (${rideOption.provider})` : place.name,
-        destination: place.name,
-        traveler_name: currentUser?.name || 'Guest Traveler',
-        traveler_email: currentUser?.email || 'traveler@payngo.ai',
-        amount_usd: totalUSD,
-        amount_inr: totalINR,
-        currency: currency,
-        status: 'COMPLETED',
-        payment_method: 'PayPal Instant Sandbox (Verified)',
-      });
-      setTimeout(() => {
-        onSuccess(mockOrderId, totalUSD, place.name);
-      }, 750);
-    } catch (err) {
+      const orderId = await handleCreateOrder();
+      if (!orderId) throw new Error('PayPal did not return a valid order ID');
+      await handleApproveOrder({ orderID: orderId });
+    } catch (err: any) {
+      setErrorMsg(
+        err.message ||
+          'PayPal checkout failed. Ensure PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET are configured in your environment.'
+      );
       setLoading(false);
     }
   };

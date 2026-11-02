@@ -41,11 +41,34 @@ export const RideCalculatorModal: React.FC<RideCalculatorModalProps> = ({
 
   useEffect(() => {
     if (!place) return;
-    const computed = calculateFares(place.distanceKm, 1.15, place.name);
+    let isCancelled = false;
+    const computed = calculateFares(place.distanceKm, 1.0, place.name);
     setRides(computed);
     if (computed.length > 0) {
       setSelectedRide(computed[0]);
     }
+
+    if (Number.isFinite(place.lat) && Number.isFinite(place.lng)) {
+      const origin = { lat: place.lat - 0.04, lng: place.lng - 0.03 };
+      fetch('/api/route', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ origin, destination: { lat: place.lat, lng: place.lng } }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!isCancelled && data.success && data.route?.distanceKm) {
+            const roadFares = calculateFares(data.route.distanceKm, 1.0, place.name);
+            setRides(roadFares);
+            if (roadFares.length > 0) setSelectedRide(roadFares[0]);
+          }
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      isCancelled = true;
+    };
   }, [place]);
 
   if (!place) return null;

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Place, RideOption } from '@/types';
-import { Sparkles, Send, X, Bot, CreditCard, Zap, RefreshCw } from 'lucide-react';
+import { Sparkles, Send, X, Bot, CreditCard, Zap, RefreshCw, MapPin, Car } from 'lucide-react';
 import { AiActions, MessageItem, MessageAction } from '@/components/ui/ai-actions';
 
 interface AIChatSidebarProps {
@@ -237,6 +237,83 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
               <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        )}
+
+        {/* OpenStreetMap Places Card */}
+        {toolResult?.places && toolResult.places.length > 0 && (
+          <div className="rounded-2xl p-3.5 space-y-2.5 mt-2 bg-white border border-slate-200 shadow-sm text-slate-800">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span className="flex items-center gap-1.5 text-sky-700">
+                <MapPin className="w-3.5 h-3.5" />
+                OpenStreetMap Places
+              </span>
+              <span className="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-full font-medium">
+                Live OSM
+              </span>
+            </div>
+            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              {toolResult.places.slice(0, 5).map((p: any, idx: number) => (
+                <div key={p.id || idx} className="p-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-slate-800 truncate">{p.name}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{p.address || p.category}</p>
+                  </div>
+                  <button
+                    onClick={() => handleSendMessage(`Calculate fares to ${p.name} from current location`)}
+                    className="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white transition-colors"
+                  >
+                    Fares
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Modelled Transport Fares Card */}
+        {toolResult?.fares && toolResult.fares.length > 0 && (
+          <div className="rounded-2xl p-3.5 space-y-2.5 mt-2 bg-slate-900 text-white border border-slate-800 shadow-md">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span className="flex items-center gap-1.5 text-amber-400">
+                <Car className="w-3.5 h-3.5" />
+                Transport Fares ({toolResult.fares[0]?.distanceKm || ''} km)
+              </span>
+              <span className="text-[9px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full font-medium">
+                Modelled Fares
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400">
+              {toolResult.fares[0]?.availabilityNote || 'Modelled estimates based on actual distance. Final fares confirmed in provider apps.'}
+            </p>
+            <div className="space-y-1.5">
+              {toolResult.fares.slice(0, 4).map((f: any, idx: number) => (
+                <div key={idx} className="p-2 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-white">{f.provider}</span>
+                    <span className="text-[10px] text-slate-400 ml-1.5">~{f.durationMinutes} mins</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-amber-400">₹{f.estimatedPriceINR}</span>
+                    <button
+                      onClick={() => {
+                        const params = new URLSearchParams({
+                          title: `${f.provider} Ride (${f.distanceKm || ''} km)`,
+                          amount: f.estimatedPriceINR.toString(),
+                          type: 'transit',
+                          details: `Travel to destination via ${f.provider}`,
+                        });
+                        router.push(`/checkout?${params.toString()}`);
+                        onClose();
+                      }}
+                      className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition-colors"
+                    >
+                      Book
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

@@ -34,6 +34,11 @@ export interface RideOption {
   borderColor?: string;
   logoSvg?: string;
   icon?: string;
+  availabilityNote?: string;
+  distanceKm?: number;
+  pricingAssumptions?: string;
+  quoteType?: string;
+  isEstimate?: boolean;
 }
 
 export interface PayPalOrderPayload {
@@ -54,7 +59,7 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
   toolResult?: {
-    type: 'places' | 'rides' | 'payment_created' | 'itinerary';
+    type: 'places' | 'rides' | 'payment_created' | 'itinerary' | 'agent_tools';
     data: any;
   };
 }

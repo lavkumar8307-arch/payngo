@@ -5,19 +5,108 @@ import { searchOpenStreetMapPlaces, getRoadRoute } from '@/lib/travel-integratio
 export const dynamic = 'force-dynamic';
 const SYSTEM = `You are Travelo, PayNGo's India travel assistant. Be accurate and concise. Never claim prices, availability, opening hours, bookings or provider quotes are live unless a connected source confirms them. Use tools for nearby places, route distances and fare estimates. Fare results are modelled estimates, not provider quotes. Never initiate a payment or booking; explain that the user must review and explicitly approve payment separately. Ask for missing origin/destination or coordinates when needed.`;
 const declarations = [
-  { name: 'search_places', description: 'Find nearby restaurants, attractions or hotels using OpenStreetMap data.', parameters: { type: 'OBJECT', properties: { query: { type: 'STRING', description: 'City, neighborhood or place name' }, category: { type: 'STRING', enum: ['all','food','hotel','activity'] }, limit: { type: 'INTEGER' } }, required: ['query'] } },
-  { name: 'calculate_route', description: 'Calculate approximate driving road distance and duration between two coordinate pairs.', parameters: { type: 'OBJECT', properties: { originLat: { type: 'NUMBER' }, originLng: { type: 'NUMBER' }, destinationLat: { type: 'NUMBER' }, destinationLng: { type: 'NUMBER' } }, required: ['originLat','originLng','destinationLat','destinationLng'] } },
-  { name: 'estimate_fares', description: 'Estimate transport fares for a known route distance. These are modelled estimates, not live provider quotes.', parameters: { type: 'OBJECT', properties: { distanceKm: { type: 'NUMBER' }, city: { type: 'STRING' } }, required: ['distanceKm'] } }
+  {
+    name: 'search_restaurants',
+    description: 'Find authentic local restaurants, cafes, eateries, and food courts using OpenStreetMap data.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        query: { type: 'STRING', description: 'City, neighborhood, or area name (e.g. Connaught Place Delhi, Indiranagar Bengaluru)' },
+        limit: { type: 'INTEGER', description: 'Max number of places to return (default 8)' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'search_attractions',
+    description: 'Find tourist attractions, heritage sites, monuments, viewpoints, and museums using OpenStreetMap data.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        query: { type: 'STRING', description: 'City, neighborhood, or area name (e.g. Jaipur, Old Delhi, Fort Kochi)' },
+        limit: { type: 'INTEGER', description: 'Max number of places to return (default 8)' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'search_places',
+    description: 'Find nearby places, hotels, or attractions using OpenStreetMap data.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        query: { type: 'STRING', description: 'City, neighborhood, or place name' },
+        category: { type: 'STRING', enum: ['all', 'food', 'hotel', 'activity'] },
+        limit: { type: 'INTEGER' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'calculate_route',
+    description: 'Calculate approximate driving road distance and travel duration between two coordinate pairs using OSRM.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        originLat: { type: 'NUMBER' },
+        originLng: { type: 'NUMBER' },
+        destinationLat: { type: 'NUMBER' },
+        destinationLng: { type: 'NUMBER' },
+      },
+      required: ['originLat', 'originLng', 'destinationLat', 'destinationLng'],
+    },
+  },
+  {
+    name: 'estimate_fares',
+    description: 'Estimate transport fares for a known route distance. These are modelled estimates, not live provider quotes.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        distanceKm: { type: 'NUMBER', description: 'Route road distance in kilometers' },
+        city: { type: 'STRING', description: 'Target city name' },
+      },
+      required: ['distanceKm'],
+    },
+  },
 ];
+
 async function executeTool(name: string, args: any) {
-  if (name === 'search_places') return { source: 'OpenStreetMap', places: await searchOpenStreetMapPlaces(String(args.query || ''), String(args.category || 'all'), Number(args.limit || 8)) };
-  if (name === 'calculate_route') return await getRoadRoute({ lat: Number(args.originLat), lng: Number(args.originLng) }, { lat: Number(args.destinationLat), lng: Number(args.destinationLng) });
+  if (name === 'search_restaurants') {
+    return {
+      source: 'OpenStreetMap',
+      places: await searchOpenStreetMapPlaces(String(args.query || ''), 'food', Number(args.limit || 8)),
+    };
+  }
+  if (name === 'search_attractions') {
+    return {
+      source: 'OpenStreetMap',
+      places: await searchOpenStreetMapPlaces(String(args.query || ''), 'activity', Number(args.limit || 8)),
+    };
+  }
+  if (name === 'search_places') {
+    return {
+      source: 'OpenStreetMap',
+      places: await searchOpenStreetMapPlaces(String(args.query || ''), String(args.category || 'all'), Number(args.limit || 8)),
+    };
+  }
+  if (name === 'calculate_route') {
+    return await getRoadRoute(
+      { lat: Number(args.originLat), lng: Number(args.originLng) },
+      { lat: Number(args.destinationLat), lng: Number(args.destinationLng) }
+    );
+  }
   if (name === 'estimate_fares') {
     const distance = Number(args.distanceKm);
-    if (!Number.isFinite(distance) || distance <= 0 || distance > 3000) throw new Error('Provide a valid route distance in kilometres');
-    return { distanceKm: distance, quoteType: 'MODELLED_ESTIMATE_NOT_LIVE_PROVIDER_QUOTE', fares: calculateFares(distance, 1, String(args.city || '')).map(ride => ({ ...ride, availabilityNote: 'Estimated fare only. Confirm the final price in the provider app.' })) };
+    if (!Number.isFinite(distance) || distance <= 0 || distance > 3000) {
+      throw new Error('Provide a valid route distance in kilometres');
+    }
+    return {
+      distanceKm: distance,
+      quoteType: 'MODELLED_ESTIMATE_NOT_LIVE_PROVIDER_QUOTE',
+      fares: calculateFares(distance, 1.0, String(args.city || '')),
+    };
   }
-  throw new Error('Unknown tool requested');
+  throw new Error(`Unknown tool requested: ${name}`);
 }
 export async function POST(req: NextRequest) {
   try {
@@ -39,7 +128,19 @@ export async function POST(req: NextRequest) {
     const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(key);
     for (let turn = 0; turn < 3; turn++) {
-      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ system_instruction: { parts: [{ text: SYSTEM }] }, contents, tools: [{ function_declarations: declarations }], tool_config: { function_calling_config: { mode: 'AUTO' } }, generationConfig: { temperature: 0.4, maxOutputTokens: 900 } }, cache: 'no-store', signal: AbortSignal.timeout(25000) });
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: SYSTEM }] },
+          contents,
+          tools: [{ function_declarations: declarations }],
+          tool_config: { function_calling_config: { mode: 'AUTO' } },
+          generationConfig: { temperature: 0.4, maxOutputTokens: 900 }
+        }),
+        cache: 'no-store',
+        signal: AbortSignal.timeout(25000)
+      });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error?.message || 'Gemini request failed');
       const candidate = data.candidates?.[0];
@@ -47,7 +148,23 @@ export async function POST(req: NextRequest) {
       const calls = parts.filter((part: any) => part.functionCall);
       if (!calls.length) {
         const reply = parts.map((part: any) => part.text || '').filter(Boolean).join('\n').trim();
-        return NextResponse.json({ reply: reply || 'I could not generate a response. Please try again.', toolResult: toolResults.length ? { type: 'agent_tools', data: toolResults } : null, modelUsed: model });
+        const placeTool = toolResults.find((t) => t.tool === 'search_places' || t.tool === 'search_restaurants' || t.tool === 'search_attractions');
+        const fareTool = toolResults.find((t) => t.tool === 'estimate_fares');
+        const routeTool = toolResults.find((t) => t.tool === 'calculate_route');
+        const formattedToolResult = toolResults.length
+          ? {
+              type: 'agent_tools',
+              data: toolResults,
+              places: placeTool?.result?.places || null,
+              fares: fareTool?.result?.fares || null,
+              route: routeTool?.result || null,
+            }
+          : null;
+        return NextResponse.json({
+          reply: reply || 'I could not generate a response. Please try again.',
+          toolResult: formattedToolResult,
+          modelUsed: model,
+        });
       }
       contents.push({ role: 'model', parts });
       const functionResponses = [];
