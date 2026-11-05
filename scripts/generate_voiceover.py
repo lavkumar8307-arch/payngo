@@ -2,28 +2,43 @@ import asyncio
 import edge_tts
 import os
 
-TEXT = """
-Traveling to a new country like India is exhilarating, but for foreign travelers and newcomers, navigating local transport fares, authentic spots, and local payment barriers can be intimidating and confusing.
+SCRIPT_TEXT = """
+Arriving in an unfamiliar city is exhilarating, but it can also be overwhelming. You find yourself juggling five different apps just to compare ride prices, second-guessing tourist traps, and navigating uncertain checkout flows.
 
-Meet PayNGo — an AI-powered travel companion that turns chaotic travel planning into effortless, trusted discovery, backed by the safety of PayPal.
+Meet PayNGo, your intelligent AI travel companion built for the PayPal AI Hackathon 2026.
 
-With PayNGo's intelligent discovery radar powered by Google Gemini, travelers can search in plain English for authentic local spots and transit routes. Our system automatically estimates verified fair rates across rideshare and local transport — eliminating foreigner surge scams and ensuring complete price transparency.
+PayNGo brings discovery, multi-modal transit estimation, and trusted payments together into one seamless flow.
 
-Here is where PayPal takes center stage. Instead of dealing with foreign card declines or unfamiliar local QR systems, PayNGo embeds PayPal Orders API v2 directly into the booking flow. With one click, travelers get an itemized ledger, instant digital entry passes, and bank-grade 256-bit encryption with PayPal Buyer Protection.
+Simply ask our AI assistant, Travelo, powered by Gemini 2.5 Flash. Instead of hallucinating, Travelo uses real server-side tool calling. It queries OpenStreetMap and Overpass APIs to discover verified local dining spots and iconic cultural landmarks.
 
-Travelers can also capture and contribute real-time memories on our interactive photo clothesline, sharing tips with the global community. Everything is backed by a reactive Supabase PostgreSQL architecture, syncing your booked itineraries, saved routes, and verified reviews in real time across devices.
+Once you select a destination, PayNGo calculates the exact road driving distance and travel duration using OSRM road routing. Our transparent fare engine immediately evaluates options across bikes, autos, cabs, and metro, showing accurate time, distance, and carbon savings with clear pricing assumptions.
 
-Built with Next.js, Gemini AI, Supabase, and PayPal, PayNGo bridges the gap between global explorers and authentic local experiences. Safe, smart, and borderless. Thank you for watching!
-""".strip()
+When you are ready to book, there are zero fake simulations. PayNGo integrates deeply with the PayPal Orders API v2. With one click, our server creates an encrypted checkout order. Upon your explicit approval, the payment is captured and verified server-side, issuing a verifiable digital receipt with QR authentication.
 
-async def main():
-    voice = "en-US-ChristopherNeural"
-    output_file = "PayNGo_Demo_Voiceover.mp3"
-    print(f"Generating voiceover using {voice}...")
-    communicate = edge_tts.Communicate(TEXT, voice=voice, rate="-2%")
-    await communicate.save(output_file)
-    print(f"Voiceover successfully generated and saved to: {os.path.abspath(output_file)}")
-    print(f"File size: {os.path.getsize(output_file)} bytes")
+From "I don't know where to go" to a verified journey paid seamlessly via PayPal, PayNGo turns travel anxiety into effortless exploration.
+
+PayNGo: Explore with confidence, powered by PayPal.
+"""
+
+VOICE = "en-US-ChristopherNeural"  # Professional, crisp, engaging voice
+OUTPUT_PATHS = [
+    "PayNGo_Demo_Voiceover.mp3",
+    "public/PayNGo_Demo_Voiceover.mp3"
+]
+
+async def generate():
+    print(f"Generating voiceover using neural voice: {VOICE}...")
+    communicate = edge_tts.Communicate(SCRIPT_TEXT.strip(), VOICE, rate="+3%", pitch="+0Hz")
+    
+    # Save to root
+    await communicate.save(OUTPUT_PATHS[0])
+    print(f"Saved voiceover to {OUTPUT_PATHS[0]}")
+    
+    # Also save to public folder for web playback
+    os.makedirs("public", exist_ok=True)
+    import shutil
+    shutil.copyfile(OUTPUT_PATHS[0], OUTPUT_PATHS[1])
+    print(f"Copied voiceover to {OUTPUT_PATHS[1]}")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(generate())

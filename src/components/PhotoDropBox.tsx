@@ -19,9 +19,17 @@ interface PhotoDropBoxProps {
   slides: Slide[];
   onPhotoAdded: (newSlide: Slide) => void;
   onPhotoDeleted?: (index: number) => void;
+  userEmail?: string | null;
+  userName?: string | null;
 }
 
-export function PhotoDropBox({ slides = [], onPhotoAdded, onPhotoDeleted }: PhotoDropBoxProps) {
+export function PhotoDropBox({
+  slides = [],
+  onPhotoAdded,
+  onPhotoDeleted,
+  userEmail,
+  userName,
+}: PhotoDropBoxProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [justDropped, setJustDropped] = useState(false);
   const [lastAddedName, setLastAddedName] = useState<string | null>(null);
@@ -350,9 +358,9 @@ export function PhotoDropBox({ slides = [], onPhotoAdded, onPhotoDeleted }: Phot
           className="mt-3 flex items-center space-x-2 text-xs font-semibold text-slate-200 bg-slate-900/90 hover:bg-blue-600/20 hover:text-white hover:border-blue-500/50 px-4 py-1.5 rounded-full border border-slate-700/80 transition-all shadow-md group cursor-pointer"
         >
           <Eye className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform" />
-          <span>{slides.length} Photos in Memory Box</span>
+          <span>{slides.length} {slides.length === 1 ? 'Photo' : 'Photos'} in Memory Box</span>
           <span className="text-[10px] text-sky-400 font-mono bg-sky-500/10 px-1.5 py-0.5 rounded-full ml-1">
-            Click to View
+            {slides.length === 0 ? 'Empty Box' : 'Click to View'}
           </span>
         </button>
       </div>
@@ -371,14 +379,16 @@ export function PhotoDropBox({ slides = [], onPhotoAdded, onPhotoDeleted }: Phot
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-lg sm:text-xl font-black text-white tracking-tight whitespace-nowrap">
-                      Memory Box Archives
+                      {userName ? `${userName}'s Memory Box Archives` : 'Memory Box Archives'}
                     </h3>
                     <span className="text-xs font-mono font-semibold bg-blue-500/20 text-blue-300 px-2.5 py-0.5 rounded-full border border-blue-500/30 whitespace-nowrap shrink-0">
                       {slides.length} {slides.length === 1 ? 'photo' : 'photos'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5 truncate sm:whitespace-normal">
-                    Instant photos preserved inside the memory box & pegged on the clothesline.
+                    {userEmail
+                      ? `Personal instant photos saved to ${userEmail} & pegged on the clothesline.`
+                      : 'Instant photos preserved inside your personal memory box & pegged on the clothesline.'}
                   </p>
                 </div>
               </div>
@@ -408,10 +418,14 @@ export function PhotoDropBox({ slides = [], onPhotoAdded, onPhotoDeleted }: Phot
             <div className="overflow-y-auto py-5 pr-1 space-y-4 flex-1">
               {slides.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400 space-y-3">
-                  <Camera className="w-12 h-12 text-slate-600 animate-pulse" />
-                  <p className="text-sm font-semibold">The memory box is empty.</p>
-                  <p className="text-xs text-slate-500 max-w-sm">
-                    Drag and drop photos directly into the open box or click upload to store memories.
+                  <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700/70 flex items-center justify-center text-slate-400">
+                    <Camera className="w-7 h-7 text-sky-400/80" />
+                  </div>
+                  <p className="text-base font-bold text-slate-200">The memory box is empty</p>
+                  <p className="text-xs text-slate-400 max-w-sm">
+                    {userEmail
+                      ? `You haven't added any personal photos yet. Drop photos directly into the 3D box or click "+ Upload More" above to peg them onto the clothesline!`
+                      : 'You are viewing as guest with an empty memory box. Drag and drop photos directly into the open box or click "+ Upload More" above to store your memories!'}
                   </p>
                 </div>
               ) : (
@@ -473,7 +487,11 @@ export function PhotoDropBox({ slides = [], onPhotoAdded, onPhotoDeleted }: Phot
             <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 shrink-0">
               <span className="flex items-center space-x-1">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Photos are automatically saved to your browser session</span>
+                <span>
+                  {userEmail
+                    ? `Photos saved to your account (${userEmail})`
+                    : 'Photos are automatically saved to your browser session'}
+                </span>
               </span>
               <button
                 onClick={() => setIsGalleryOpen(false)}

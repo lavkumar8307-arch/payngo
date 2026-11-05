@@ -11,9 +11,21 @@ export const TechStackFooter: React.FC<{ dark?: boolean }> = ({ dark = false }) 
         : 'bg-slate-50 border-slate-200 text-slate-600'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium">
-        <p className={dark ? 'text-slate-400' : 'text-slate-500'}>
-          Built for the <span className={`font-bold ${dark ? 'text-white' : 'text-slate-800'}`}>PayPal AI Hackathon 2026</span>.
-        </p>
+        <div className="flex flex-col sm:flex-row items-center gap-2">
+          <p className={dark ? 'text-slate-400' : 'text-slate-500'}>
+            Built for the <span className={`font-bold ${dark ? 'text-white' : 'text-slate-800'}`}>PayPal AI Hackathon 2026</span>.
+          </p>
+          <a
+            href="https://payngo-eta.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center space-x-1.5 text-[11px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+            title="Live Production Deployment"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>payngo-eta.vercel.app</span>
+          </a>
+        </div>
         <div className="flex items-center space-x-6">
           <Link
             href="/about"

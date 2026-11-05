@@ -199,14 +199,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
           ) : (
-            onOpenAuth && (
-              <button
-                onClick={onOpenAuth}
-                className="text-xs font-bold text-slate-700 hover:text-slate-950 px-2.5 py-1.5 rounded-full hover:bg-slate-100 transition-colors hidden sm:block"
-              >
-                Login
-              </button>
-            )
+            <Link
+              href="/login"
+              className="text-xs font-bold text-slate-700 hover:text-slate-950 px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors hidden sm:inline-flex items-center space-x-1"
+            >
+              <span>Login</span>
+            </Link>
           )}
 
           {/* AI ASSISTANT Button */}

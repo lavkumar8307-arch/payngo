@@ -1,4 +1,5 @@
-import { supabase, isSupabaseConfigured, BookingRecord, SavedItineraryRecord } from './supabase';
+import { supabase, isSupabaseConfigured, BookingRecord, SavedItineraryRecord, UserProfileRecord } from './supabase';
+import { saveStoredUser } from './auth';
 
 const LOCAL_STORAGE_TRIPS_KEY = 'wanderpay_trips';
 const LOCAL_STORAGE_ITINERARIES_KEY = 'wanderpay_saved_itineraries';
@@ -147,4 +148,77 @@ export async function persistItinerary(itinerary: SavedItineraryRecord): Promise
   }
 
   return { success: true, data: itinerary };
+}
+
+/**
+ * Upsert user profile to Supabase database ('profiles' / 'users' tables) & local storage
+ */
+export async function upsertUserRecord(user: {
+  id?: string;
+  email: string;
+  name?: string;
+  avatarUrl?: string;
+  provider?: string;
+}): Promise<{ success: boolean; data?: any; error?: string }> {
+  const cleanEmail = user.email.toLowerCase().trim();
+  const cleanName = user.name?.trim() || cleanEmail.split('@')[0];
+  const avatar = user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}`;
+
+  // 1. Immediately store in local session so UI updates instantaneously
+  if (typeof window !== 'undefined') {
+    saveStoredUser({
+      email: cleanEmail,
+      name: cleanName,
+      avatarUrl: avatar,
+    });
+  }
+
+  // 2. Persist to Supabase Database if configured
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const now = new Date().toISOString();
+      const profilePayload: Record<string, any> = {
+        email: cleanEmail,
+        full_name: cleanName,
+        name: cleanName,
+        avatar_url: avatar,
+        provider: user.provider || 'email',
+        last_sign_in_at: now,
+        updated_at: now,
+      };
+      if (user.id) {
+        profilePayload.id = user.id;
+      }
+
+      // Try upserting to 'profiles' table first
+      const { data: profileData, error: profileErr } = await supabase
+        .from('profiles')
+        .upsert(profilePayload, { onConflict: 'email' })
+        .select()
+        .single();
+
+      if (!profileErr) {
+        return { success: true, data: profileData };
+      }
+
+      // If 'profiles' table failed (e.g. doesn't exist), try 'users' table
+      const { data: userData, error: userErr } = await supabase
+        .from('users')
+        .upsert(profilePayload, { onConflict: 'email' })
+        .select()
+        .single();
+
+      if (!userErr) {
+        return { success: true, data: userData };
+      }
+
+      console.warn('Supabase profile/user table upsert note:', profileErr.message, userErr.message);
+      return { success: false, error: profileErr.message || userErr.message };
+    } catch (err: any) {
+      console.warn('Database user sync failed:', err);
+      return { success: false, error: err?.message };
+    }
+  }
+
+  return { success: true };
 }

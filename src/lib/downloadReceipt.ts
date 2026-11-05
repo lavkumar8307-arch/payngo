@@ -194,7 +194,7 @@ export function downloadReceipt(data: ReceiptData) {
         This is a computer-generated receipt and does not require a signature.<br/>
         For support: <strong>support@payngo.app</strong>
       </div>
-      <div class="generated">Generated on ${now} &nbsp;|&nbsp; payngo.vercel.app</div>
+      <div class="generated">Generated on ${now} &nbsp;|&nbsp; payngo-eta.vercel.app</div>
     </div>
   </div>
 </body>

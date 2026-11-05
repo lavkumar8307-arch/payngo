@@ -1,6 +1,7 @@
 # 🧭 PayNGo – AI Travel Companion & Instant PayPal Checkout
 **PayPal AI Hackathon 2026 Submission**
 
+> **Live Demo:** [https://payngo-eta.vercel.app](https://payngo-eta.vercel.app)  
 > **Tagline:** Your AI travel agent that finds the best local experiences *and* pays for them seamlessly using PayPal.
 
 ---

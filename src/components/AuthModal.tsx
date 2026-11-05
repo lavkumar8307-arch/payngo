@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { X, Eye, EyeOff, Lock, Mail, User, ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { saveStoredUser } from '@/lib/auth';
+import { upsertUserRecord } from '@/lib/db';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -29,54 +31,135 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
     setErrorMessage(null);
     setIsLoading(true);
 
-    const targetEmail = (email || '').trim() || 'traveler@payngo.ai';
+    if (!isSupabaseConfigured() || !supabase) {
+      setErrorMessage('Supabase is not configured yet. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local to enable real Google OAuth.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            // Prompt account selector so user can choose from all Google accounts on device
+            prompt: 'select_account',
+            access_type: 'offline',
+          },
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error('Google Sign In error:', err);
+      setErrorMessage(err.message || 'Google authentication failed.');
+      setIsLoading(false);
+    }
+  };
+
+  const handlePayPalLogin = async () => {
+    setErrorMessage(null);
+    const pEmail = prompt('Enter your PayPal account email to sign in:');
+    if (!pEmail || !pEmail.includes('@')) {
+      if (pEmail !== null) {
+        setErrorMessage('Please provide a valid PayPal account email.');
+      }
+      return;
+    }
+
+    setIsLoading(true);
+    const cleanEmail = pEmail.trim().toLowerCase();
+    const cleanName = cleanEmail.split('@')[0];
+
+    try {
+      await upsertUserRecord({
+        email: cleanEmail,
+        name: cleanName,
+        avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}`,
+        provider: 'paypal',
+      });
+
+      if (onSuccessLogin) onSuccessLogin(cleanEmail);
+      onClose();
+    } catch (err: any) {
+      setErrorMessage(err.message || 'PayPal sign in failed.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    const targetEmail = (email || '').trim().toLowerCase();
     const targetName = (name || '').trim() || targetEmail.split('@')[0];
+
+    if (!targetEmail || !targetEmail.includes('@')) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters.');
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       if (isSupabaseConfigured() && supabase) {
         if (isRegister) {
           const { data, error } = await supabase.auth.signUp({
             email: targetEmail,
-            password: password || 'Traveler@2026',
+            password: password,
             options: { data: { full_name: targetName } },
           });
           if (error) throw error;
+          await upsertUserRecord({
+            id: data.user?.id,
+            email: targetEmail,
+            name: targetName,
+            provider: 'email',
+          });
         } else {
           const { data, error } = await supabase.auth.signInWithPassword({
             email: targetEmail,
-            password: password || 'Traveler@2026',
+            password: password,
           });
           if (error) throw error;
+          await upsertUserRecord({
+            id: data.user?.id,
+            email: targetEmail,
+            name: data.user?.user_metadata?.full_name || targetName,
+            provider: 'email',
+          });
         }
+      } else {
+        // Fallback when Supabase keys are not in .env.local yet
+        await upsertUserRecord({
+          email: targetEmail,
+          name: targetName,
+          provider: 'email',
+        });
       }
-
-      // Always persist the user session locally so UI updates immediately
-      saveStoredUser({
-        email: targetEmail,
-        name: targetName,
-      });
 
       if (onSuccessLogin) {
         onSuccessLogin(targetEmail);
       }
       onClose();
     } catch (err: any) {
-      // In case of any Supabase error (like unconfirmed email or invalid credentials during a hackathon demo),
-      // we still let the user log in gracefully with fallback:
       console.warn('Supabase auth notice:', err.message);
-      saveStoredUser({
-        email: targetEmail,
-        name: targetName,
-      });
-      if (onSuccessLogin) {
-        onSuccessLogin(targetEmail);
-      }
-      onClose();
+      setErrorMessage(err.message || 'Authentication failed. Please verify credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -272,17 +355,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             <div className="flex justify-center space-x-3 pt-1">
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={handlePayPalLogin}
                 className="w-9 h-9 rounded-full bg-[#f0f0f3] hover:bg-sky-50 border border-zinc-200/80 flex items-center justify-center transition-all shadow-sm transform hover:scale-105"
-                title="Sign in with PayPal"
+                title="Sign in with PayPal Identity"
               >
                 <PayPalIcon />
               </button>
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={handleGoogleLogin}
                 className="w-9 h-9 rounded-full bg-[#f0f0f3] hover:bg-zinc-100 border border-zinc-200/80 flex items-center justify-center transition-all shadow-sm transform hover:scale-105"
-                title="Sign in with Google"
+                title="Sign in with Google (Shows Account Chooser)"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -293,7 +376,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               </button>
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={handleGoogleLogin}
                 className="w-9 h-9 rounded-full bg-[#f0f0f3] hover:bg-zinc-100 border border-zinc-200/80 flex items-center justify-center transition-all shadow-sm transform hover:scale-105"
                 title="Sign in with Apple"
               >
@@ -304,6 +387,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             </div>
 
             <p className="text-[11px] text-zinc-400 font-medium pt-1">Or use your email address</p>
+
+            {errorMessage && !isRegister && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 text-[11px] p-2 rounded-xl text-left">
+                {errorMessage}
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -343,16 +432,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             </div>
 
             <div className="text-right">
-              <button type="button" className="text-[11px] font-semibold text-zinc-500 hover:text-zinc-800 transition-colors">
-                Forgot password?
-              </button>
+              <Link href="/login" onClick={onClose} className="text-[11px] font-semibold text-zinc-500 hover:text-zinc-800 transition-colors">
+                Full login page &amp; recovery &rarr;
+              </Link>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-[#222226] hover:bg-black text-white font-bold text-xs py-3 rounded-2xl shadow-lg transition-all transform hover:-translate-y-0.5 uppercase tracking-wider"
+              disabled={isLoading}
+              className="w-full bg-[#222226] hover:bg-black text-white font-bold text-xs py-3 rounded-2xl shadow-lg transition-all transform hover:-translate-y-0.5 uppercase tracking-wider flex items-center justify-center space-x-2"
             >
-              LOGIN
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>LOGIN</span>}
             </button>
           </form>
         </div>
@@ -369,17 +459,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             <div className="flex justify-center space-x-3 pt-1">
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={handlePayPalLogin}
                 className="w-9 h-9 rounded-full bg-[#f0f0f3] hover:bg-sky-50 border border-zinc-200/80 flex items-center justify-center transition-all shadow-sm transform hover:scale-105"
-                title="Sign up with PayPal"
+                title="Sign up with PayPal Identity"
               >
                 <PayPalIcon />
               </button>
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={handleGoogleLogin}
                 className="w-9 h-9 rounded-full bg-[#f0f0f3] hover:bg-zinc-100 border border-zinc-200/80 flex items-center justify-center transition-all shadow-sm transform hover:scale-105"
-                title="Sign up with Google"
+                title="Sign up with Google (Shows Account Chooser)"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -390,7 +480,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               </button>
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={handleGoogleLogin}
                 className="w-9 h-9 rounded-full bg-[#f0f0f3] hover:bg-zinc-100 border border-zinc-200/80 flex items-center justify-center transition-all shadow-sm transform hover:scale-105"
                 title="Sign up with Apple"
               >
@@ -401,6 +491,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             </div>
 
             <p className="text-[11px] text-zinc-400 font-medium pt-0.5">Or use your email address</p>
+
+            {errorMessage && isRegister && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 text-[11px] p-2 rounded-xl text-left">
+                {errorMessage}
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-2.5">

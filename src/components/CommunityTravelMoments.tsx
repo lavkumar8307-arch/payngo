@@ -16,6 +16,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { PhotoDropBox } from '@/components/PhotoDropBox';
+import { useCurrentUser, AuthUser } from '@/lib/auth';
 
 const INITIAL_TRAVEL_SLIDES: Slide[] = [
   {
@@ -75,7 +76,9 @@ const SAMPLE_PHOTO_PRESETS = [
 ];
 
 export function CommunityTravelMoments() {
-  const [slides, setSlides] = useState<Slide[]>(INITIAL_TRAVEL_SLIDES);
+  const { user } = useCurrentUser();
+  // userPhotos contains only memories added by the user into the memory box (starts empty!)
+  const [userPhotos, setUserPhotos] = useState<Slide[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [caption, setCaption] = useState('');
@@ -87,22 +90,87 @@ export function CommunityTravelMoments() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load community photos from localStorage on mount
+  // Helper to identify the 6 built-in curated slides so they are NEVER placed inside the user's memory box
+  const isInitialTravelSlide = (slide: Slide): boolean => {
+    if (!slide) return true;
+    return INITIAL_TRAVEL_SLIDES.some(
+      (init) =>
+        (slide.title && init.title && init.title.toLowerCase() === slide.title.toLowerCase()) ||
+        (slide.image && init.image && init.image === slide.image)
+    );
+  };
+
+  const getStorageKey = (currentUser: AuthUser | null) => {
+    return currentUser?.email ? `payngo_user_photos_${currentUser.email}` : 'payngo_user_photos_guest';
+  };
+
+  const saveUserPhotos = (photos: Slide[], currentUser = user) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const key = getStorageKey(currentUser);
+      localStorage.setItem(key, JSON.stringify(photos));
+    } catch (err) {
+      console.error('Failed to save user photos:', err);
+    }
+  };
+
+  // Load user's photos from localStorage on mount and when login state changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('wanderpay_community_photos');
+    if (typeof window === 'undefined') return;
+    try {
+      const key = getStorageKey(user);
+      const saved = localStorage.getItem(key);
       if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setSlides(parsed);
-          }
-        } catch (e) {
-          console.error('Failed to parse community photos:', e);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // Strictly exclude the 6 built-in slides
+          const filtered = parsed.filter((p) => !isInitialTravelSlide(p));
+          setUserPhotos(filtered);
+          return;
         }
       }
+
+      // If user is logged in, check if guest session had photos to migrate
+      if (user?.email) {
+        const guestSaved = localStorage.getItem('payngo_user_photos_guest');
+        if (guestSaved) {
+          const parsedGuest = JSON.parse(guestSaved);
+          if (Array.isArray(parsedGuest)) {
+            const filteredGuest = parsedGuest.filter((p) => !isInitialTravelSlide(p));
+            if (filteredGuest.length > 0) {
+              setUserPhotos(filteredGuest);
+              saveUserPhotos(filteredGuest, user);
+              localStorage.removeItem('payngo_user_photos_guest');
+              return;
+            }
+          }
+        }
+      }
+
+      // Check legacy storage key if present, keeping ONLY user-uploaded photos
+      const legacySaved = localStorage.getItem('wanderpay_community_photos');
+      if (legacySaved) {
+        const parsedLegacy = JSON.parse(legacySaved);
+        if (Array.isArray(parsedLegacy)) {
+          const userOnly = parsedLegacy.filter((p) => !isInitialTravelSlide(p));
+          if (userOnly.length > 0) {
+            setUserPhotos(userOnly);
+            saveUserPhotos(userOnly, user);
+          } else {
+            setUserPhotos([]);
+          }
+          localStorage.removeItem('wanderpay_community_photos');
+          return;
+        }
+      }
+
+      // If user has not uploaded any photos, the box is completely empty
+      setUserPhotos([]);
+    } catch (e) {
+      console.error('Failed to load user photos:', e);
+      setUserPhotos([]);
     }
-  }, []);
+  }, [user?.email]);
 
   // Process dropped/selected image file
   const processImageFile = (file: File) => {
@@ -183,16 +251,9 @@ export function CommunityTravelMoments() {
       alt: title.trim()
     };
 
-    const updated = [newSlide, ...slides];
-    setSlides(updated);
-
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('wanderpay_community_photos', JSON.stringify(updated));
-      } catch (err) {
-        console.error(err);
-      }
-    }
+    const updated = [newSlide, ...userPhotos];
+    setUserPhotos(updated);
+    saveUserPhotos(updated);
 
     // Reset and close
     setTitle('');
@@ -204,28 +265,19 @@ export function CommunityTravelMoments() {
   };
 
   const handleBoxPhotoAdded = (newSlide: Slide) => {
-    const updated = [newSlide, ...slides];
-    setSlides(updated);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('wanderpay_community_photos', JSON.stringify(updated));
-      } catch (err) {
-        console.error(err);
-      }
-    }
+    const updated = [newSlide, ...userPhotos];
+    setUserPhotos(updated);
+    saveUserPhotos(updated);
   };
 
   const handleBoxPhotoDeleted = (indexToDelete: number) => {
-    const updated = slides.filter((_, idx) => idx !== indexToDelete);
-    setSlides(updated);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('wanderpay_community_photos', JSON.stringify(updated));
-      } catch (err) {
-        console.error(err);
-      }
-    }
+    const updated = userPhotos.filter((_, idx) => idx !== indexToDelete);
+    setUserPhotos(updated);
+    saveUserPhotos(updated);
   };
+
+  // Clothesline animation always features the 6 iconic travel destinations + user's uploaded memories
+  const carouselSlides = [...userPhotos, ...INITIAL_TRAVEL_SLIDES];
 
   return (
     <section
@@ -278,10 +330,10 @@ export function CommunityTravelMoments() {
       {/* Main Area: Clothesline Carousel + Photo Drop Box Companion */}
       <div className="relative w-full flex flex-col xl:flex-row items-stretch bg-slate-950/40">
         
-        {/* The Polaroid Sagging Line Carousel Component */}
+        {/* The Polaroid Sagging Line Carousel Component (Features 6 Curated Indian Destinations + User Photos) */}
         <div className="flex-1 relative h-[520px] sm:h-[560px]">
           <PolaroidLineCarousel
-            slides={slides}
+            slides={carouselSlides}
             height="100%"
             cardWidth={280}
             sag={42}
@@ -294,12 +346,14 @@ export function CommunityTravelMoments() {
           />
         </div>
 
-        {/* Interactive 3D Photo Drop Box Dock */}
+        {/* Interactive 3D Photo Drop Box Dock (Contains strictly only user-added photos) */}
         <div className="p-5 sm:p-6 border-t xl:border-t-0 xl:border-l border-slate-800/80 flex flex-col justify-center items-center shrink-0 bg-slate-950/70 backdrop-blur-sm z-20">
           <PhotoDropBox
-            slides={slides}
+            slides={userPhotos}
             onPhotoAdded={handleBoxPhotoAdded}
             onPhotoDeleted={handleBoxPhotoDeleted}
+            userEmail={user?.email}
+            userName={user?.name}
           />
         </div>
 
