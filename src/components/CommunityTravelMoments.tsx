@@ -93,11 +93,28 @@ export function CommunityTravelMoments() {
   // Helper to identify the 6 built-in curated slides so they are NEVER placed inside the user's memory box
   const isInitialTravelSlide = (slide: Slide): boolean => {
     if (!slide) return true;
-    return INITIAL_TRAVEL_SLIDES.some(
-      (init) =>
-        (slide.title && init.title && init.title.toLowerCase() === slide.title.toLowerCase()) ||
-        (slide.image && init.image && init.image === slide.image)
-    );
+    const titleLower = (slide.title || '').toLowerCase().trim();
+    const knownDefaultKeywords = [
+      'charminar',
+      'marine drive',
+      'hawa mahal',
+      'india gate',
+      'himalayan',
+      'alleppey',
+      'taj mahal',
+      'varanasi',
+      'cubbon park'
+    ];
+    const isKeywordMatch = knownDefaultKeywords.some((kw) => titleLower.includes(kw));
+
+    const isUrlMatch = INITIAL_TRAVEL_SLIDES.some((init) => {
+      if (!slide.image || !init.image) return false;
+      const cleanSlideUrl = slide.image.split('?')[0];
+      const cleanInitUrl = init.image.split('?')[0];
+      return cleanSlideUrl === cleanInitUrl;
+    });
+
+    return isKeywordMatch || isUrlMatch;
   };
 
   const getStorageKey = (currentUser: AuthUser | null) => {
@@ -108,7 +125,9 @@ export function CommunityTravelMoments() {
     if (typeof window === 'undefined') return;
     try {
       const key = getStorageKey(currentUser);
-      localStorage.setItem(key, JSON.stringify(photos));
+      // Ensure we only ever persist genuine user-uploaded photos
+      const sanitized = photos.filter((p) => !isInitialTravelSlide(p));
+      localStorage.setItem(key, JSON.stringify(sanitized));
     } catch (err) {
       console.error('Failed to save user photos:', err);
     }
@@ -126,6 +145,8 @@ export function CommunityTravelMoments() {
           // Strictly exclude the 6 built-in slides
           const filtered = parsed.filter((p) => !isInitialTravelSlide(p));
           setUserPhotos(filtered);
+          // Overwrite localStorage with the clean sanitized list
+          saveUserPhotos(filtered, user);
           return;
         }
       }
@@ -140,10 +161,10 @@ export function CommunityTravelMoments() {
             if (filteredGuest.length > 0) {
               setUserPhotos(filteredGuest);
               saveUserPhotos(filteredGuest, user);
-              localStorage.removeItem('payngo_user_photos_guest');
-              return;
             }
           }
+          localStorage.removeItem('payngo_user_photos_guest');
+          return;
         }
       }
 
@@ -159,9 +180,9 @@ export function CommunityTravelMoments() {
           } else {
             setUserPhotos([]);
           }
-          localStorage.removeItem('wanderpay_community_photos');
-          return;
         }
+        localStorage.removeItem('wanderpay_community_photos');
+        return;
       }
 
       // If user has not uploaded any photos, the box is completely empty
@@ -276,6 +297,20 @@ export function CommunityTravelMoments() {
     saveUserPhotos(updated);
   };
 
+  const handleBoxClearAll = () => {
+    setUserPhotos([]);
+    saveUserPhotos([]);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('payngo_user_photos_guest');
+        localStorage.removeItem('wanderpay_community_photos');
+        if (user?.email) {
+          localStorage.removeItem(`payngo_user_photos_${user.email}`);
+        }
+      } catch (e) {}
+    }
+  };
+
   // Clothesline animation always features the 6 iconic travel destinations + user's uploaded memories
   const carouselSlides = [...userPhotos, ...INITIAL_TRAVEL_SLIDES];
 
@@ -352,6 +387,7 @@ export function CommunityTravelMoments() {
             slides={userPhotos}
             onPhotoAdded={handleBoxPhotoAdded}
             onPhotoDeleted={handleBoxPhotoDeleted}
+            onClearAll={handleBoxClearAll}
             userEmail={user?.email}
             userName={user?.name}
           />

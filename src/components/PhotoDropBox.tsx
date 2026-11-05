@@ -19,17 +19,41 @@ interface PhotoDropBoxProps {
   slides: Slide[];
   onPhotoAdded: (newSlide: Slide) => void;
   onPhotoDeleted?: (index: number) => void;
+  onClearAll?: () => void;
   userEmail?: string | null;
   userName?: string | null;
+}
+
+const BUILT_IN_DESTINATIONS = [
+  'charminar',
+  'marine drive',
+  'hawa mahal',
+  'india gate',
+  'himalayan',
+  'alleppey',
+  'taj mahal',
+  'varanasi',
+  'cubbon park'
+];
+
+function isBuiltInDestination(slide: Slide): boolean {
+  if (!slide) return true;
+  const title = (slide.title || '').toLowerCase();
+  const caption = (slide.caption || '').toLowerCase();
+  return BUILT_IN_DESTINATIONS.some((k) => title.includes(k) || caption.includes(k));
 }
 
 export function PhotoDropBox({
   slides = [],
   onPhotoAdded,
   onPhotoDeleted,
+  onClearAll,
   userEmail,
   userName,
 }: PhotoDropBoxProps) {
+  // Strictly filter out any built-in destinations so the box contains ONLY real user photos
+  const displaySlides = slides.filter((s) => !isBuiltInDestination(s));
+
   const [isDragOver, setIsDragOver] = useState(false);
   const [justDropped, setJustDropped] = useState(false);
   const [lastAddedName, setLastAddedName] = useState<string | null>(null);
@@ -94,7 +118,7 @@ export function PhotoDropBox({
   };
 
   // Up to 3 latest photos to display inside the open box
-  const peekPhotos = slides.slice(0, 3);
+  const peekPhotos = displaySlides.slice(0, 3);
 
   return (
     <>
@@ -358,9 +382,9 @@ export function PhotoDropBox({
           className="mt-3 flex items-center space-x-2 text-xs font-semibold text-slate-200 bg-slate-900/90 hover:bg-blue-600/20 hover:text-white hover:border-blue-500/50 px-4 py-1.5 rounded-full border border-slate-700/80 transition-all shadow-md group cursor-pointer"
         >
           <Eye className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform" />
-          <span>{slides.length} {slides.length === 1 ? 'Photo' : 'Photos'} in Memory Box</span>
+          <span>{displaySlides.length} {displaySlides.length === 1 ? 'Photo' : 'Photos'} in Memory Box</span>
           <span className="text-[10px] text-sky-400 font-mono bg-sky-500/10 px-1.5 py-0.5 rounded-full ml-1">
-            {slides.length === 0 ? 'Empty Box' : 'Click to View'}
+            {displaySlides.length === 0 ? 'Empty Box' : 'Click to View'}
           </span>
         </button>
       </div>
@@ -382,7 +406,7 @@ export function PhotoDropBox({
                       {userName ? `${userName}'s Memory Box Archives` : 'Memory Box Archives'}
                     </h3>
                     <span className="text-xs font-mono font-semibold bg-blue-500/20 text-blue-300 px-2.5 py-0.5 rounded-full border border-blue-500/30 whitespace-nowrap shrink-0">
-                      {slides.length} {slides.length === 1 ? 'photo' : 'photos'}
+                      {displaySlides.length} {displaySlides.length === 1 ? 'photo' : 'photos'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5 truncate sm:whitespace-normal">
@@ -393,8 +417,22 @@ export function PhotoDropBox({
                 </div>
               </div>
 
-              {/* Action Buttons: Upload More + Close */}
+              {/* Action Buttons: Upload More + Clear + Close */}
               <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                {displaySlides.length > 0 && onClearAll && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm('Clear all photos from your Memory Box?')) {
+                        onClearAll();
+                      }
+                    }}
+                    className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-semibold px-3 py-2 rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear Box</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -416,7 +454,7 @@ export function PhotoDropBox({
 
             {/* Photo Grid */}
             <div className="overflow-y-auto py-5 pr-1 space-y-4 flex-1">
-              {slides.length === 0 ? (
+              {displaySlides.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400 space-y-3">
                   <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700/70 flex items-center justify-center text-slate-400">
                     <Camera className="w-7 h-7 text-sky-400/80" />
@@ -430,7 +468,7 @@ export function PhotoDropBox({
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {slides.map((photo, index) => (
+                  {displaySlides.map((photo, index) => (
                     <div
                       key={index}
                       className="group relative bg-white rounded-xl shadow-lg border border-slate-200 p-2 flex flex-col transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
