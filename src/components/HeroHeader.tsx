@@ -49,45 +49,25 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
   ];
 
   return (
-    <div className="relative overflow-hidden bg-slate-50 border-b border-slate-200/80">
+    <div className="relative overflow-hidden bg-slate-50 pt-8 pb-8 border-b border-slate-200/80">
 
-      {/* =========================================================================
-          1. CINEMATIC VIDEO ABOVE (Top visual showcase with faded bottom)
-          ========================================================================= */}
-      <div className="relative w-full h-[260px] sm:h-[340px] lg:h-[400px] overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover pointer-events-none scale-105"
-        >
-          <source src="/videos/hero-background.mp4" type="video/mp4" />
-        </video>
+      {/* Soft Light Ambient Mesh Gradient Glow Orbs */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-sky-300/20 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-10 right-1/4 w-96 h-96 bg-indigo-300/20 blur-[120px] rounded-full pointer-events-none" />
 
-        {/* Soft Ambient Overlay */}
-        <div className="absolute inset-0 bg-black/10 pointer-events-none" />
-
-        {/* Bottom of video fades smoothly into the text section below */}
-        <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none" />
-      </div>
-
-      {/* =========================================================================
-          2. TEXT AND SEARCH SECTION BELOW THE VIDEO
-          ========================================================================= */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 -mt-12 sm:-mt-16 pb-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Title Tagline */}
         <div className="text-center max-w-4xl mx-auto mb-8">
-          <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 text-xs text-blue-900 font-bold mb-4 shadow-sm">
+          <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs text-blue-800 font-semibold mb-4 shadow-sm">
             <Sparkles className="w-4 h-4 text-blue-600" />
             <span>AI Travel Companion • India Smart Discovery</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-950 tracking-tight leading-tight text-balance">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight text-balance">
             Explore <span className="text-blue-600">{displayCity}</span> like a local.
           </h1>
-          <p className="mt-2 text-lg sm:text-xl font-bold text-slate-800">
+          <p className="mt-2 text-lg sm:text-xl font-medium text-slate-700">
             Pay securely with PayPal.
           </p>
 
@@ -114,7 +94,7 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
 
         {/* Quick Search & AI Prompt Bar */}
         <div className="max-w-2xl mx-auto mb-8">
-          <div className="relative flex items-center bg-white border border-slate-300 rounded-2xl shadow-lg p-2 transition-all hover:border-blue-500 hover:shadow-xl">
+          <div className="relative flex items-center bg-white border border-slate-300 rounded-2xl shadow-lg p-2 transition-all hover:border-blue-500">
             <Search className="w-5 h-5 text-slate-400 ml-3 shrink-0" />
             <input
               type="text"
@@ -129,7 +109,7 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
             />
             <button
               onClick={() => onSearchPrompt(`Find top newcomer friendly places in ${displayCity}`)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shrink-0 flex items-center space-x-1.5 shadow-md active:scale-95"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shrink-0 flex items-center space-x-1.5 shadow-md"
             >
               <Sparkles className="w-3.5 h-3.5 fill-white" />
               <span>Ask AI</span>
@@ -161,7 +141,7 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
                 onClick={() => onSelectCategory(cat.id)}
                 className={`flex shrink-0 items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all ${isActive
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 border border-blue-500'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 shadow-sm'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                   }`}
               >
                 <Icon className={`w-4 h-4 ${isActive ? 'text-amber-300' : 'text-slate-500'}`} />
