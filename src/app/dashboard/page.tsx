@@ -63,56 +63,22 @@ function DashboardContent() {
   const [activeTab, setActiveTab] = useState<'upcoming' | 'receipts'>('upcoming');
   const [revealedPassId, setRevealedPassId] = useState<string | null>(null);
 
-  const [trips, setTrips] = useState<TripItem[]>([
-    {
-      id: 'TRIP-894102',
-      orderId: 'PAYPAL-991203',
-      title: 'IndiGo 6E-482, Hyderabad → Guwahati',
-      routeCode: 'HYD ➔ GAU',
-      flightOrTrainNo: 'IndiGo 6E-482',
-      departureTime: '06:15 AM (HYD Rajiv Gandhi Intl)',
-      arrivalTime: '09:05 AM (GAU Borjhar)',
-      destination: 'Guwahati, Assam',
-      travelerName: 'Rahul Sharma',
-      travelerEmail: 'rahul.sharma@example.com',
-      amountINR: 6564,
-      amountUSD: 78.89,
-      bookingDate: '11 Oct 2026',
-      travelDate: '18 Oct 2026',
-      status: 'Paid',
-      paymentMethod: 'Payment received via PayPal',
-      qrCodeMock: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=WP-CONFIRMED-894102',
-    },
-    {
-      id: 'TRIP-842190',
-      orderId: 'PAYPAL-819201',
-      title: 'Charminar Heritage Walk & Nizam Royal Dinner Pass',
-      routeCode: 'Old City Circuit',
-      departureTime: '05:30 PM (Gulzar Houz)',
-      arrivalTime: '09:00 PM (Laad Bazaar)',
-      destination: 'Hyderabad, Telangana',
-      travelerName: 'Rahul Sharma',
-      travelerEmail: 'rahul.sharma@example.com',
-      amountINR: 1575,
-      amountUSD: 18.93,
-      bookingDate: '10 Oct 2026',
-      travelDate: '14 Oct 2026',
-      status: 'Paid',
-      paymentMethod: 'Payment received via PayPal',
-      qrCodeMock: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=WP-CONFIRMED-842190',
-    },
-  ]);
+  const [trips, setTrips] = useState<TripItem[]>([]);
+  const [isLoadingTrips, setIsLoadingTrips] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
+    setIsLoadingTrips(true);
     fetchBookings(user?.email).then((fetched) => {
-      if (isMounted && fetched && fetched.length > 0) {
-        setTrips((prev) => {
-          // Merge unique bookings by orderId
-          const existingIds = new Set(fetched.map((f: any) => f.orderId));
-          const remainingPrev = prev.filter((p) => !existingIds.has(p.orderId));
-          return [...fetched, ...remainingPrev];
-        });
+      if (isMounted) {
+        setTrips(fetched || []);
+        setIsLoadingTrips(false);
+      }
+    }).catch((err) => {
+      console.warn('Error fetching bookings:', err);
+      if (isMounted) {
+        setTrips([]);
+        setIsLoadingTrips(false);
       }
     });
     return () => {
@@ -124,28 +90,30 @@ function DashboardContent() {
   const totalSpentUSD = Number((totalSpentINR / 83.2).toFixed(2));
   const totalSavingsINR = Math.round(totalSpentINR * 0.28);
 
-  const bookingFiles: FolderFile[] = [
-    {
-      name: 'IndiGo 6E Flight Pass',
-      meta: 'HYD ➔ GAU · Confirmed',
-      image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      name: 'Charminar Heritage Tour',
-      meta: 'Old City Circuit · VIP Entry',
-      image: 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      name: 'PayPal Official Receipt',
-      meta: 'v2 Orders API · Encrypted',
-      art: 'ember',
-    },
-    {
-      name: 'PayNGo 24/7 Concierge',
-      meta: 'Support · Ready',
-      art: 'aurora',
-    },
-  ];
+  const bookingFiles: FolderFile[] = trips.length > 0
+    ? trips.map((trip) => ({
+        name: trip.title,
+        meta: `${trip.routeCode || trip.destination} · Confirmed`,
+        image: trip.title.toLowerCase().includes('flight') || trip.title.toLowerCase().includes('indigo')
+          ? 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=600&q=80'
+          : 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=600&q=80',
+      }))
+    : [
+        {
+          name: 'Ready for Your Next Trip',
+          meta: 'Browse Flights & Passes',
+          art: 'aurora',
+        },
+        {
+          name: 'PayPal Official Receipts',
+          meta: 'v2 Orders API · Encrypted',
+          art: 'ember',
+        },
+        {
+          name: 'PayNGo 24/7 Concierge',
+          meta: 'Support · Ready',
+        },
+      ];
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
@@ -312,7 +280,41 @@ function DashboardContent() {
               <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-72 h-72 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
             </div>
 
-            {trips.map((trip) => {
+            {isLoadingTrips ? (
+              <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center text-slate-500 font-medium">
+                <div className="inline-block animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mb-3" />
+                <p>Loading your trips and passes...</p>
+              </div>
+            ) : trips.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-10 sm:p-14 text-center space-y-4">
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                  <Plane className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-slate-900">No Trips or Passes Yet</h3>
+                  <p className="text-sm text-slate-500 max-w-md mx-auto">
+                    Your confirmed bookings, boarding passes, and tickets will automatically appear here once you book your next destination.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <Link
+                    href="/explore"
+                    className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm flex items-center space-x-2"
+                  >
+                    <Compass className="w-4 h-4" />
+                    <span>Explore Destinations</span>
+                  </Link>
+                  <Link
+                    href="/planner"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm flex items-center space-x-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Plan Trip with AI</span>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              trips.map((trip) => {
               const isPassRevealed = revealedPassId === trip.id;
 
               return (
@@ -454,7 +456,7 @@ function DashboardContent() {
 
                 </div>
               );
-            })}
+            }))}
           </div>
         )}
 
@@ -474,21 +476,29 @@ function DashboardContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {trips.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-50">
-                      <td className="py-3.5 px-4 font-mono font-bold text-blue-700">{t.id}</td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-900">{t.title}</td>
-                      <td className="py-3.5 px-4 font-mono text-slate-500">{t.orderId}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
-                        ₹{t.amountINR.toLocaleString('en-IN')}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-extrabold">
-                          {t.status}
-                        </span>
+                  {trips.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-400 font-medium">
+                        No PayPal payment receipts found. Your transactions will appear here after booking.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    trips.map((t) => (
+                      <tr key={t.id} className="hover:bg-slate-50">
+                        <td className="py-3.5 px-4 font-mono font-bold text-blue-700">{t.id}</td>
+                        <td className="py-3.5 px-4 font-semibold text-slate-900">{t.title}</td>
+                        <td className="py-3.5 px-4 font-mono text-slate-500">{t.orderId}</td>
+                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                          ₹{t.amountINR.toLocaleString('en-IN')}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-extrabold">
+                            {t.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

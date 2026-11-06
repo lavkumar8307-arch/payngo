@@ -74,44 +74,54 @@ export async function persistBooking(booking: BookingRecord): Promise<{ success:
  * Fetch all bookings for a user
  */
 export async function fetchBookings(userEmail?: string): Promise<any[]> {
+  const cleanEmail = userEmail?.trim().toLowerCase();
+
   // If Supabase is connected, query Supabase
   if (isSupabaseConfigured() && supabase) {
     try {
       let query = supabase.from('bookings').select('*').order('created_at', { ascending: false });
-      if (userEmail) {
-        query = query.eq('traveler_email', userEmail);
+      if (cleanEmail) {
+        query = query.eq('traveler_email', cleanEmail);
       }
       const { data, error } = await query;
-      if (!error && data && data.length > 0) {
-        // Map database records to TripItem format for the dashboard
-        return data.map((b: any) => ({
-          id: b.id || b.order_id,
-          orderId: b.order_id,
-          title: b.title,
-          destination: b.destination,
-          travelerName: b.traveler_name,
-          travelerEmail: b.traveler_email,
-          amountINR: Number(b.amount_inr),
-          amountUSD: Number(b.amount_usd),
-          bookingDate: new Date(b.booking_date || b.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
-          travelDate: b.travel_date ? new Date(b.travel_date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Flexible',
-          status: b.status,
-          paymentMethod: b.payment_method,
-          qrCodeMock: b.qr_code_url || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${b.order_id}`,
-        }));
+      if (!error && data) {
+        if (data.length > 0) {
+          // Map database records to TripItem format for the dashboard
+          return data.map((b: any) => ({
+            id: b.id || b.order_id,
+            orderId: b.order_id,
+            title: b.title,
+            destination: b.destination,
+            travelerName: b.traveler_name,
+            travelerEmail: b.traveler_email,
+            amountINR: Number(b.amount_inr),
+            amountUSD: Number(b.amount_usd),
+            bookingDate: new Date(b.booking_date || b.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+            travelDate: b.travel_date ? new Date(b.travel_date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Flexible',
+            status: b.status,
+            paymentMethod: b.payment_method,
+            qrCodeMock: b.qr_code_url || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${b.order_id}`,
+          }));
+        } else if (cleanEmail) {
+          // User is authenticated and genuinely has 0 bookings in database
+          return [];
+        }
       }
     } catch (err) {
       console.warn('Could not query Supabase bookings:', err);
     }
   }
 
-  // Fallback to local storage
+  // Fallback to local storage (only return trips belonging to this user)
   if (typeof window !== 'undefined') {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_TRIPS_KEY);
       if (stored) {
         const list = JSON.parse(stored);
-        if (Array.isArray(list) && list.length > 0) {
+        if (Array.isArray(list)) {
+          if (cleanEmail) {
+            return list.filter((item) => (item.travelerEmail || '').toLowerCase() === cleanEmail);
+          }
           return list;
         }
       }
