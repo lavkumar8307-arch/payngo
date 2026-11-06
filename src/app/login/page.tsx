@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -59,7 +59,7 @@ const PayPalIcon = () => (
   </svg>
 );
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useCurrentUser();
@@ -735,6 +735,23 @@ export default function LoginPage() {
       </footer>
 
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+          <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-3">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+          </div>
+          <p className="text-xs text-slate-400">Loading PayNGo authentication...</p>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
 
