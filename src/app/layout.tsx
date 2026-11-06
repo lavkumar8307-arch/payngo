@@ -22,9 +22,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={jakarta.variable}>
       <body className={`${jakarta.className} bg-slate-50 text-slate-900 antialiased selection:bg-sky-500 selection:text-white`}>
-        <div className="bg-amber-100 text-amber-900 text-xs sm:text-sm text-center py-1.5 px-4 font-semibold border-b border-amber-200/80 sticky top-0 z-[60]">
-          Demo mode: no real bookings or payments are made.
-        </div>
         {children}
       </body>
     </html>
