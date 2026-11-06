@@ -474,7 +474,7 @@ export default function PolaroidLineCarousel({
       onPointerUp={onUp}
       onPointerCancel={onUp}
     >
-      <style>{PL_CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: PL_CSS }} />
       <svg className="pl-string" aria-hidden="true">
         <path ref={pathRef} fill="none" stroke={string} strokeWidth="1.5" strokeLinecap="round" />
       </svg>

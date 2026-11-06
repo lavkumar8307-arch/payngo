@@ -719,7 +719,7 @@ export default function GlassFolder({
       data-place={labelPlacement}
       style={{ width, height: (H + HEADROOM) * k, ...style }}
     >
-      <style>{GF_CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: GF_CSS }} />
       <div className="gf-stage" style={{ transform: "translateY(" + HEADROOM * k + "px) scale(" + k + ")" }}>
         <div className="gf-tilt">
           <div className="gf-shadow" aria-hidden="true" />
