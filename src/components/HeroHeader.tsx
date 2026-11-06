@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Sparkles, Navigation, Award, Zap, ShieldCheck, CreditCard, ChevronDown } from 'lucide-react';
+import { Search, Sparkles, Navigation, Award, Zap, ShieldCheck, CreditCard, ArrowRight, Utensils } from 'lucide-react';
 
 interface HeroHeaderProps {
   cityName: string;
@@ -115,19 +115,33 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
             Pay securely with PayPal.
           </p>
 
-          {/* Subtitle */}
+          {/* Subtitle - focused on affordable multi-city travel & easy restaurant booking */}
           <p className="text-sm sm:text-base text-slate-700 font-medium max-w-2xl mx-auto leading-relaxed text-balance pt-1">
-            Meet your personal travel assistant — the one that learns what matters to you, works for you and keeps you one step ahead. So every trip feels right.
+            Travel from any place to another at the most affordable prices. Compare live fares across flights, trains, and local cabs, discover top-rated authentic restaurants, and book with ease.
           </p>
 
-          {/* Center Black Rounded Pill CTA Button */}
-          <div className="pt-4">
+          {/* Center Action Buttons */}
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
             <button
-              onClick={() => onOpenChat?.()}
+              onClick={() => {
+                const plannerEl = document.getElementById('planner');
+                if (plannerEl) {
+                  plannerEl.scrollIntoView({ behavior: 'smooth' });
+                } else if (onOpenChat) {
+                  onOpenChat();
+                }
+              }}
               className="bg-black hover:bg-neutral-800 text-white text-sm sm:text-base font-bold px-8 sm:px-10 py-4 rounded-full transition-all shadow-xl hover:shadow-2xl active:scale-95 inline-flex items-center space-x-2 cursor-pointer group"
             >
-              <span>Set up your travel assistant</span>
-              <Sparkles className="w-4 h-4 text-sky-400 group-hover:rotate-12 transition-transform" />
+              <span>Plan Affordable Route & Book</span>
+              <ArrowRight className="w-4 h-4 text-sky-400 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button
+              onClick={() => onSelectCategory('food')}
+              className="bg-white/90 hover:bg-white text-slate-900 border border-slate-300 text-sm sm:text-base font-bold px-7 py-4 rounded-full transition-all shadow-md hover:shadow-lg active:scale-95 inline-flex items-center space-x-2 cursor-pointer backdrop-blur-md"
+            >
+              <Utensils className="w-4 h-4 text-amber-600" />
+              <span>Explore Restaurants</span>
             </button>
           </div>
         </div>
@@ -156,19 +170,19 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
       <section className="relative z-20 bg-white border-b border-slate-200/80 pt-6 pb-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Quick Metrics Bar */}
+          {/* Quick Metrics Bar - Focused on Affordable Travel & Dining */}
           <div className="mb-6 flex flex-wrap justify-center items-center gap-3 text-xs font-semibold text-slate-700">
             <span className="flex items-center space-x-1.5 bg-slate-50 px-3.5 py-1.5 rounded-full border border-slate-200/80 shadow-xs">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Trusted Local Picks</span>
-            </span>
-            <span className="flex items-center space-x-1.5 bg-slate-50 px-3.5 py-1.5 rounded-full border border-slate-200/80 shadow-xs">
               <Navigation className="w-4 h-4 text-blue-600" />
-              <span>Compare Local Fares</span>
+              <span>Affordable Multi-Modal Travel (Flight · Train · Cab)</span>
             </span>
             <span className="flex items-center space-x-1.5 bg-slate-50 px-3.5 py-1.5 rounded-full border border-slate-200/80 shadow-xs">
-              <CreditCard className="w-4 h-4 text-amber-600" />
-              <span>Secure PayPal Checkout</span>
+              <Utensils className="w-4 h-4 text-amber-600" />
+              <span>Authentic Restaurants & Easy Booking</span>
+            </span>
+            <span className="flex items-center space-x-1.5 bg-slate-50 px-3.5 py-1.5 rounded-full border border-slate-200/80 shadow-xs">
+              <CreditCard className="w-4 h-4 text-emerald-600" />
+              <span>Instant PayPal Checkout</span>
             </span>
           </div>
 
