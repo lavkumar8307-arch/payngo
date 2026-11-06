@@ -77,7 +77,7 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
       {/* =========================================================================
           1. MINDTRIP PAGE 1 FULL-VIEWPORT HERO (with 3 cycling background videos)
           ========================================================================= */}
-      <section className="relative w-full min-h-[85vh] sm:min-h-[90vh] flex flex-col items-center justify-center overflow-hidden bg-white">
+      <section className="relative w-full min-h-[90vh] sm:min-h-[95vh] flex flex-col items-center justify-end overflow-hidden bg-white pb-16 sm:pb-20 pt-44 sm:pt-60">
         
         {/* 3 Background Videos with Smooth Crossfade */}
         {BG_VIDEOS.map((video, idx) => (
@@ -99,29 +99,29 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
           </div>
         ))}
 
-        {/* Ambient Top & Bottom Gradients for Mindtrip Typography Contrast */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-white/95 pointer-events-none z-[1]" />
+        {/* Ambient Top & Bottom Gradients: Leaves top video clear, fades bottom into typography */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent via-35% to-white/95 85% pointer-events-none z-[1]" />
 
-        {/* Main Center Content */}
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center pt-8 pb-16 space-y-4">
+        {/* Main Lower-Positioned Content */}
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-3.5 mb-2">
           
           {/* Main Mindtrip Bold Title */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-950 tracking-tight leading-[1.08] text-balance">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-950 tracking-tight leading-[1.05] text-balance">
             Explore India like a local.
           </h1>
 
           {/* Subheading */}
-          <p className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
+          <p className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
             Pay securely with PayPal.
           </p>
 
-          {/* Subtitle - focused on affordable multi-city travel & easy restaurant booking */}
+          {/* Subtitle */}
           <p className="text-sm sm:text-base text-slate-700 font-medium max-w-2xl mx-auto leading-relaxed text-balance pt-1">
             Travel from any place to another at the most affordable prices. Compare live fares across flights, trains, and local cabs, discover top-rated authentic restaurants, and book with ease.
           </p>
 
           {/* Center Action Buttons */}
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={() => {
                 const plannerEl = document.getElementById('planner');
@@ -138,7 +138,7 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
             </button>
             <button
               onClick={() => onSelectCategory('food')}
-              className="bg-white/90 hover:bg-white text-slate-900 border border-slate-300 text-sm sm:text-base font-bold px-7 py-4 rounded-full transition-all shadow-md hover:shadow-lg active:scale-95 inline-flex items-center space-x-2 cursor-pointer backdrop-blur-md"
+              className="bg-white/95 hover:bg-white text-slate-900 border border-slate-300 text-sm sm:text-base font-bold px-7 py-4 rounded-full transition-all shadow-md hover:shadow-lg active:scale-95 inline-flex items-center space-x-2 cursor-pointer backdrop-blur-md"
             >
               <Utensils className="w-4 h-4 text-amber-600" />
               <span>Explore Restaurants</span>
@@ -147,7 +147,7 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
         </div>
 
         {/* Bottom Carousel Dot Indicators (Exact Mindtrip . . . dots) */}
-        <div className="absolute bottom-6 inset-x-0 flex items-center justify-center space-x-2 z-20">
+        <div className="absolute bottom-5 inset-x-0 flex items-center justify-center space-x-2 z-20">
           {BG_VIDEOS.map((video, idx) => (
             <button
               key={video.id}
