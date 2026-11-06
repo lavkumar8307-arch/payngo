@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Place } from '@/types';
 import { LocationState } from '@/lib/mockData';
+import { detectLiveLocation } from '@/lib/location';
 import {
   Navigation,
   LocateFixed,
@@ -13,6 +14,7 @@ import {
   Compass,
   Star,
   ExternalLink,
+  Loader2,
 } from 'lucide-react';
 
 interface SmartMapProps {
@@ -21,6 +23,7 @@ interface SmartMapProps {
   selectedPlace: Place | null;
   onSelectPlace: (place: Place) => void;
   onOpenLocationPicker: () => void;
+  onLocationDetected?: (loc: LocationState) => void;
 }
 
 type MapTheme = 'streets' | 'satellite' | 'terrain' | 'osm';
@@ -31,6 +34,7 @@ export const SmartMap: React.FC<SmartMapProps> = ({
   selectedPlace,
   onSelectPlace,
   onOpenLocationPicker,
+  onLocationDetected,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -40,6 +44,8 @@ export const SmartMap: React.FC<SmartMapProps> = ({
 
   const [mapTheme, setMapTheme] = useState<MapTheme>('streets');
   const [isMapReady, setIsMapReady] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationStatus, setLocationStatus] = useState<string | null>(null);
 
   // Free high-definition tile layers with NO API keys, NO watermarks, and reliable high-zoom coverage
   const tileUrls = {
@@ -286,99 +292,141 @@ export const SmartMap: React.FC<SmartMapProps> = ({
     }
   };
 
+  // Live Location Detection with Glassmorphic Button
+  const handleDetectLiveLocation = async () => {
+    setIsLocating(true);
+    setLocationStatus(null);
+    try {
+      const loc = await detectLiveLocation();
+      if (onLocationDetected) {
+        onLocationDetected(loc);
+      }
+      if (mapInstanceRef.current && loc.lat && loc.lng) {
+        mapInstanceRef.current.flyTo([loc.lat, loc.lng], 13, {
+          duration: 1.5,
+        });
+      }
+      const shortName = loc.name.split(',')[0].trim();
+      setLocationStatus(`Live GPS locked: ${shortName}`);
+      setTimeout(() => setLocationStatus(null), 3500);
+    } catch (err: any) {
+      console.warn('Live location error:', err);
+      setLocationStatus(err.message || 'Permission denied in browser');
+      setTimeout(() => setLocationStatus(null), 4000);
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
   return (
-    <div className="relative w-full h-[520px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-slate-100 group">
+    <div className="relative w-full h-[520px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-slate-900 group">
       {/* Map Container */}
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-      {/* Top Left Header Card Overlay */}
-      <div className="absolute top-4 left-4 z-20 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl p-2.5 sm:px-4 sm:py-2.5 shadow-lg flex items-center justify-between gap-3 max-w-xs sm:max-w-md">
-        <div className="flex items-center space-x-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 border border-sky-100">
-            {currentLocation.isGPS ? (
-              <LocateFixed className="w-4 h-4 text-emerald-600 animate-pulse" />
-            ) : (
-              <Navigation className="w-4 h-4 text-sky-600" />
-            )}
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-xs font-bold text-slate-900 truncate">
-              {currentLocation.name}
-            </h3>
-            <p className="text-[10px] text-slate-500 font-medium truncate">
-              {places.length} verified places ranked in radar
-            </p>
-          </div>
-        </div>
+      {/* Top Left: Grey & Black Glassmorphic Live Location Button & Header Bar */}
+      <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2 max-w-[calc(100%-140px)] sm:max-w-xl">
+        {/* Grey and Black Glassmorphic Live Location Button */}
         <button
-          onClick={onOpenLocationPicker}
-          className="bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-[10px] font-bold px-2.5 py-1 rounded-xl shrink-0 transition-all shadow-sm"
+          onClick={handleDetectLiveLocation}
+          disabled={isLocating}
+          className={`group/gps flex items-center space-x-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shadow-xl backdrop-blur-xl border active:scale-95 cursor-pointer ${
+            currentLocation.isGPS
+              ? 'bg-neutral-900/90 hover:bg-black text-white border-emerald-500/60 shadow-emerald-950/40 ring-1 ring-emerald-500/30'
+              : 'bg-neutral-900/85 hover:bg-neutral-950 text-slate-100 border-neutral-700/70 hover:border-neutral-500 shadow-black/60'
+          }`}
+          title="Click to detect your device live location"
         >
-          Change
+          {isLocating ? (
+            <Loader2 className="w-4 h-4 text-sky-400 animate-spin" />
+          ) : currentLocation.isGPS ? (
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+          ) : (
+            <LocateFixed className="w-4 h-4 text-sky-400 group-hover/gps:rotate-90 transition-transform duration-300" />
+          )}
+
+          <span className="tracking-tight">
+            {isLocating
+              ? 'Detecting GPS...'
+              : currentLocation.isGPS
+              ? 'Live Location'
+              : 'Live Location'}
+          </span>
+
+          <span
+            className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider ${
+              currentLocation.isGPS
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                : 'bg-neutral-800 text-slate-400 border border-neutral-700'
+            }`}
+          >
+            {currentLocation.isGPS ? 'ACTIVE' : 'GPS'}
+          </span>
         </button>
+
+        {/* Current Location Badge with Matching Grey/Black Glassmorphism */}
+        <div className="bg-neutral-900/85 hover:bg-neutral-900/95 backdrop-blur-xl border border-neutral-700/70 text-white rounded-2xl px-3 py-2 shadow-xl flex items-center space-x-2">
+          <Navigation className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+          <span className="text-xs font-semibold text-slate-200 truncate max-w-[130px] sm:max-w-[190px]">
+            {currentLocation.name}
+          </span>
+          <button
+            onClick={onOpenLocationPicker}
+            className="text-[10px] font-bold text-sky-400 hover:text-sky-300 shrink-0 ml-1 underline decoration-sky-400/40 hover:decoration-sky-300 underline-offset-2"
+          >
+            Change
+          </button>
+        </div>
+
+        {/* Status Notification Toast */}
+        {locationStatus && (
+          <div className="bg-neutral-950/95 backdrop-blur-xl border border-neutral-700 text-slate-200 text-[11px] font-medium px-3 py-1.5 rounded-xl shadow-2xl animate-fade-in flex items-center space-x-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping" />
+            <span>{locationStatus}</span>
+          </div>
+        )}
       </div>
 
-      {/* Top Right Controls & Layer Switcher */}
+      {/* Top Right Controls & Layer Switcher with Grey & Black Glassmorphism */}
       <div className="absolute top-4 right-4 z-20 flex flex-col items-end space-y-2">
         {/* Layer Switcher Pills */}
-        <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl p-1 shadow-md flex items-center space-x-1">
-          <button
-            onClick={() => setMapTheme('streets')}
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${mapTheme === 'streets'
-                ? 'bg-neutral-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+        <div className="bg-neutral-900/85 backdrop-blur-xl border border-neutral-700/70 rounded-2xl p-1 shadow-xl flex items-center space-x-1">
+          {(['streets', 'satellite', 'terrain', 'osm'] as MapTheme[]).map((theme) => (
+            <button
+              key={theme}
+              onClick={() => setMapTheme(theme)}
+              className={`text-[10px] font-bold px-2.5 py-1 rounded-xl transition-all capitalize ${
+                mapTheme === theme
+                  ? 'bg-white text-neutral-950 shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-neutral-800/80'
               }`}
-          >
-            Streets
-          </button>
-          <button
-            onClick={() => setMapTheme('satellite')}
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${mapTheme === 'satellite'
-                ? 'bg-neutral-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-          >
-            Satellite
-          </button>
-          <button
-            onClick={() => setMapTheme('terrain')}
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${mapTheme === 'terrain'
-                ? 'bg-neutral-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-          >
-            Terrain
-          </button>
-          <button
-            onClick={() => setMapTheme('osm')}
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${mapTheme === 'osm'
-                ? 'bg-neutral-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-          >
-            OSM
-          </button>
+            >
+              {theme}
+            </button>
+          ))}
         </div>
 
-        {/* Zoom & Recenter Buttons */}
-        <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl p-1 shadow-md flex flex-col space-y-1">
+        {/* Zoom & Recenter Buttons with Grey & Black Glassmorphism */}
+        <div className="bg-neutral-900/85 backdrop-blur-xl border border-neutral-700/70 rounded-2xl p-1 shadow-xl flex flex-col space-y-1">
           <button
             onClick={handleZoomIn}
-            className="w-7 h-7 rounded-lg hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-all"
+            className="w-7 h-7 rounded-xl hover:bg-neutral-800 text-slate-300 hover:text-white flex items-center justify-center transition-all"
             title="Zoom in"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
             onClick={handleZoomOut}
-            className="w-7 h-7 rounded-lg hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-all"
+            className="w-7 h-7 rounded-xl hover:bg-neutral-800 text-slate-300 hover:text-white flex items-center justify-center transition-all"
             title="Zoom out"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
             onClick={handleRecenter}
-            className="w-7 h-7 rounded-lg hover:bg-slate-100 text-sky-600 flex items-center justify-center transition-all border-t border-slate-100"
+            className="w-7 h-7 rounded-xl hover:bg-neutral-800 text-sky-400 hover:text-sky-300 flex items-center justify-center transition-all border-t border-neutral-800"
             title="Recenter on current location"
           >
             <LocateFixed className="w-4 h-4" />
