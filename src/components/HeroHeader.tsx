@@ -13,19 +13,29 @@ interface HeroHeaderProps {
 
 const BG_VIDEOS = [
   {
-    id: 'van',
-    src: '/videos/van-portrait.webm',
-    title: 'Coastal Van Roadtrip',
+    id: 'roadtrip-4k',
+    src: 'https://videos.pexels.com/video-files/31828934/13560240_3840_2160_30fps.mp4',
+    title: 'Countryside Road Trip (4K)',
   },
   {
-    id: 'camels',
-    src: '/videos/camels-portrait.webm',
-    title: 'Desert Dunes & Camels',
+    id: 'beach-4k',
+    src: '/videos/tropical-beach-4k.mp4',
+    title: 'Turquoise Waters & Coastal Beach (4K)',
   },
   {
-    id: 'float',
-    src: '/videos/float-portrait.webm',
-    title: 'Turquoise Waters & Coral',
+    id: 'mountains-4k',
+    src: '/videos/snow-mountains-4k.mp4',
+    title: 'Himalayan Snowy Peaks (4K)',
+  },
+  {
+    id: 'motorboat-hd',
+    src: '/videos/motorboat-travel-1080p.mp4',
+    title: 'Traveling on Motorboat (1080p)',
+  },
+  {
+    id: 'camels-hd',
+    src: '/videos/desert-camels-1080p.mp4',
+    title: 'Desert Dunes & Camels (1080p)',
   },
 ];
 
@@ -94,7 +104,7 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
               playsInline
               className="w-full h-full object-cover object-center"
             >
-              <source src={video.src} type="video/webm" />
+              <source src={video.src} type={video.src.endsWith('.mp4') ? 'video/mp4' : 'video/webm'} />
             </video>
           </div>
         ))}
