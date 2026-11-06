@@ -128,14 +128,29 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Location Trigger Pill */}
           <button
             onClick={onOpenLocationPicker}
-            className="hidden lg:flex items-center space-x-1 bg-slate-100 hover:bg-slate-200/80 px-2.5 py-1 rounded-full text-slate-700 transition-colors text-[11px]"
+            className={`hidden md:flex items-center space-x-1.5 px-3 py-1 rounded-full text-slate-700 transition-all text-[11px] border cursor-pointer ${
+              currentLocation.isGPS
+                ? 'bg-emerald-50/90 text-emerald-800 border-emerald-300 shadow-sm'
+                : 'bg-slate-100 hover:bg-slate-200/80 border-slate-200/60'
+            }`}
+            title={currentLocation.isGPS ? 'Live GPS Location Active — Click to change' : 'Click to change city or enable live location'}
           >
             {currentLocation.isGPS ? (
-              <LocateFixed className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="relative flex h-2 w-2 mr-0.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
             ) : (
               <MapPin className="w-3.5 h-3.5 text-sky-600" />
             )}
-            <span className="max-w-[100px] truncate font-medium">{currentLocation.name.split(',')[0]}</span>
+            <span className="max-w-[120px] truncate font-semibold">{currentLocation.name.split(',')[0]}</span>
+            {currentLocation.isGPS ? (
+              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-200/60 px-1.5 py-0.5 rounded-full">
+                Live
+              </span>
+            ) : (
+              <span className="text-[10px] text-slate-400 hidden xl:inline">Change</span>
+            )}
           </button>
         </div>
 

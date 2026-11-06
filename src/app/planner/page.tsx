@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { POPULAR_LOCATIONS, LocationState } from '@/lib/mockData';
+import { getSavedLocation } from '@/lib/location';
 import {
   Sparkles,
   Calendar,
@@ -263,6 +264,18 @@ export default function PlannerPage() {
   });
   const [travelers, setTravelers] = useState(2);
   const [days, setDays] = useState(3);
+
+  useEffect(() => {
+    const saved = getSavedLocation();
+    if (saved) {
+      setCurrentLocation(saved);
+      const cityName = saved.name.split(',')[0].trim();
+      const matched = DEPARTURE_CITIES.find((c) => c.toLowerCase().includes(cityName.toLowerCase()));
+      if (matched) {
+        setDepartureCity(matched);
+      }
+    }
+  }, []);
   const [budget, setBudget] = useState<'budget' | 'moderate' | 'luxury'>('moderate');
   const [travelStyle, setTravelStyle] = useState('Relaxed & Scenic');
   const [interests, setInterests] = useState<string[]>(['Beaches', 'Seafood & Dining', 'Heritage & Forts']);

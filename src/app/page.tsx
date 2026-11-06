@@ -27,6 +27,7 @@ import { InterCityPlanner } from '@/components/InterCityPlanner';
 import { CommunityTravelMoments } from '@/components/CommunityTravelMoments';
 import { TechStackFooter } from '@/components/TechStackFooter';
 import { AuthModal } from '@/components/AuthModal';
+import { LiveLocationPrompt } from '@/components/LiveLocationPrompt';
 import { Sparkles, MapPin, LocateFixed } from 'lucide-react';
 
 export default function Home() {
@@ -257,6 +258,15 @@ export default function Home() {
         onSuccessLogin={(email) => {
           setIsAuthOpen(false);
         }}
+      />
+
+      {/* Floating Live Location Permission Prompt */}
+      <LiveLocationPrompt
+        currentLocation={currentLocation}
+        onLocationDetected={(loc) => {
+          setCurrentLocation(loc);
+        }}
+        onOpenManualPicker={() => setIsLocationPickerOpen(true)}
       />
 
     </main>

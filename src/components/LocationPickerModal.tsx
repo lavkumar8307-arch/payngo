@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { LocationState, POPULAR_LOCATIONS } from '@/lib/mockData';
 import { LocationAutocomplete } from '@/components/LocationAutocomplete';
 import { LocationItem } from '@/types/location';
+import { detectLiveLocation } from '@/lib/location';
 import { MapPin, Navigation, Search, X, Check, Compass, LocateFixed, Sparkles } from 'lucide-react';
 
 interface LocationPickerModalProps {
@@ -22,88 +23,20 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Use browser Geolocation API
-  const handleDetectGPS = () => {
+  const handleDetectGPS = async () => {
     setLocating(true);
     setErrorMsg(null);
 
-    if (!navigator.geolocation) {
-      setErrorMsg('Geolocation is not supported by your browser.');
+    try {
+      const liveLoc = await detectLiveLocation();
+      onSelectLocation(liveLoc);
       setLocating(false);
-      return;
+      onClose();
+    } catch (err: any) {
+      console.warn('Geolocation error:', err);
+      setErrorMsg(err.message || 'Unable to retrieve your location. Falling back to city search.');
+      setLocating(false);
     }
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        let cityName = '';
-        let stateName = '';
-
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 3500);
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14&addressdetails=1`,
-            { signal: controller.signal, headers: { 'Accept-Language': 'en' } }
-          );
-          clearTimeout(timer);
-          if (res.ok) {
-            const data = await res.json();
-            if (data?.address) {
-              const rawCity =
-                data.address.city ||
-                data.address.town ||
-                data.address.suburb ||
-                data.address.neighbourhood ||
-                data.address.village ||
-                data.address.state_district;
-              if (rawCity) {
-                cityName = rawCity.replace(/\s+(mandal|district|taluk|tehsil)$/i, '').trim();
-              }
-              if (data.address.state) {
-                stateName = data.address.state.trim();
-              }
-            }
-          }
-        } catch (e) {
-          console.warn('Location reverse geocode error:', e);
-        }
-
-        // Fallback: match nearest city from POPULAR_LOCATIONS
-        if (!cityName || !stateName) {
-          let closest = POPULAR_LOCATIONS[0];
-          let minDist = Infinity;
-          for (const loc of POPULAR_LOCATIONS) {
-            if (loc.isGPS) continue;
-            const dist = Math.hypot(loc.lat - latitude, loc.lng - longitude);
-            if (dist < minDist) {
-              minDist = dist;
-              closest = loc;
-            }
-          }
-          if (!cityName) cityName = closest.name.split(',')[0].trim();
-          if (!stateName) stateName = closest.name.split(',')[1]?.trim() || 'India';
-        }
-
-        const fullName = `${cityName}, ${stateName}`;
-
-        const userLoc: LocationState = {
-          id: 'live-gps',
-          name: fullName,
-          lat: latitude,
-          lng: longitude,
-          isGPS: true,
-        };
-        onSelectLocation(userLoc);
-        setLocating(false);
-        onClose();
-      },
-      (err) => {
-        console.warn('Geolocation error:', err);
-        setErrorMsg('Unable to retrieve your location. Falling back to city search.');
-        setLocating(false);
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
   };
 
   // Search filter
