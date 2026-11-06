@@ -95,6 +95,7 @@ export default function Home() {
         onSearchPrompt={handleSearchPrompt}
         activeCategory={activeCategory}
         onSelectCategory={(cat) => setActiveCategory(cat)}
+        onOpenChat={() => setIsChatOpen(true)}
       />
 
       {/* Main Content Layout */}
