@@ -77,7 +77,7 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
       {/* =========================================================================
           1. MINDTRIP PAGE 1 FULL-VIEWPORT HERO (with 3 cycling background videos)
           ========================================================================= */}
-      <section className="relative w-full min-h-[90vh] sm:min-h-[95vh] flex flex-col items-center justify-end overflow-hidden bg-white pb-16 sm:pb-20 pt-44 sm:pt-60">
+      <section className="relative w-full min-h-[92vh] sm:min-h-[98vh] flex flex-col items-center justify-end overflow-hidden bg-white pb-8 sm:pb-12 pt-64 sm:pt-96 lg:pt-[28rem]">
         
         {/* 3 Background Videos with Smooth Crossfade */}
         {BG_VIDEOS.map((video, idx) => (
@@ -99,11 +99,11 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
           </div>
         ))}
 
-        {/* Ambient Top & Bottom Gradients: Leaves top video clear, fades bottom into typography */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent via-35% to-white/95 85% pointer-events-none z-[1]" />
+        {/* Ambient Top & Bottom Gradients: Leaves top video completely clear, fades softly at bottom */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent via-50% to-white 88% pointer-events-none z-[1]" />
 
-        {/* Main Lower-Positioned Content */}
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-3.5 mb-2">
+        {/* Main Lower-Positioned Content - Situated close to the bottom */}
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-3 pb-2">
           
           {/* Main Mindtrip Bold Title */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-950 tracking-tight leading-[1.05] text-balance">
@@ -144,23 +144,6 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
               <span>Explore Restaurants</span>
             </button>
           </div>
-        </div>
-
-        {/* Bottom Carousel Dot Indicators (Exact Mindtrip . . . dots) */}
-        <div className="absolute bottom-5 inset-x-0 flex items-center justify-center space-x-2 z-20">
-          {BG_VIDEOS.map((video, idx) => (
-            <button
-              key={video.id}
-              onClick={() => setCurrentVideoIndex(idx)}
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                currentVideoIndex === idx
-                  ? 'w-7 bg-black'
-                  : 'w-2 bg-black/35 hover:bg-black/60'
-              }`}
-              title={video.title}
-              aria-label={`Switch to video slide ${idx + 1}: ${video.title}`}
-            />
-          ))}
         </div>
       </section>
 

@@ -46,11 +46,16 @@ module.exports = {
         "float": {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-6px)" }
+        },
+        "float1": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-8px)" }
         }
       },
       animation: {
         "pulse-glow": "pulse-glow 3s infinite ease-in-out",
         "float": "float 4s infinite ease-in-out",
+        "float1": "float1 4.5s infinite ease-in-out",
       }
     },
   },

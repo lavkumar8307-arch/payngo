@@ -7,6 +7,10 @@ import { Place, RideOption } from '@/types';
 import { Navbar } from '@/components/Navbar';
 import dynamic from 'next/dynamic';
 import { HeroHeader } from '@/components/HeroHeader';
+import { MindtripShowcaseSection } from '@/components/MindtripShowcaseSection';
+import { MindtripActsSection } from '@/components/MindtripActsSection';
+import { MindtripAdaptsSection } from '@/components/MindtripAdaptsSection';
+import { MindtripFeaturesSection } from '@/components/MindtripFeaturesSection';
 import { TripPlannerWidget } from '@/components/TripPlannerWidget';
 import { PlaceCard } from '@/components/PlaceCard';
 
@@ -97,6 +101,18 @@ export default function Home() {
         onSelectCategory={(cat) => setActiveCategory(cat)}
         onOpenChat={() => setIsChatOpen(true)}
       />
+
+      {/* Mindtrip Page 2 Cobalt Showcase Section (Learns with Learn.webm) */}
+      <MindtripShowcaseSection />
+
+      {/* Mindtrip Page 3 Showcase Section (Acts with Acts.webm) */}
+      <MindtripActsSection />
+
+      {/* Mindtrip Page 4 Showcase Section (Adapts with Adapts.webm) */}
+      <MindtripAdaptsSection />
+
+      {/* Mindtrip Page 5: 4-Card Features Section (Watch · Build · Book · Explore) */}
+      <MindtripFeaturesSection />
 
       {/* Main Content Layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 w-full flex-1 space-y-10">
