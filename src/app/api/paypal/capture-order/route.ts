@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const orderId = String(body.orderId || '');
     if (!orderId) return NextResponse.json({ success: false, error: 'orderId is required' }, { status: 400 });
-    const capture = await capturePayPalOrder(orderId);
+    const capture = await capturePayPalOrder(orderId, Number(body.expectedAmountUSD || body.amountUSD || 10));
     const unit = capture.purchase_units?.[0];
     const captured = unit?.payments?.captures?.find((item: any) => item.status === 'COMPLETED');
     const amountUSD = Number(captured?.amount?.value);

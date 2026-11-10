@@ -88,7 +88,12 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
       const res = await fetch('/api/paypal/capture-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: data.orderID }),
+        body: JSON.stringify({
+          orderId: data.orderID,
+          expectedAmountUSD: totalUSD,
+          destination: place.name,
+          title: rideOption ? `${place.name} + Ride (${rideOption.provider})` : place.name,
+        }),
       });
 
       const result = await res.json();
@@ -134,7 +139,11 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
     }
   };
 
-  const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test';
+  const rawClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '';
+  const paypalClientId =
+    rawClientId && !rawClientId.includes('...') && rawClientId !== 'test'
+      ? rawClientId
+      : 'sb';
 
   return (
     <div className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
